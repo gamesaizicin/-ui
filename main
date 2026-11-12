@@ -1,4 +1,4 @@
-local Players = game:GetService("Players")
+local LIBRARY_URL = "local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -254,6 +254,8 @@ local glyphs = {
 	check = "✓",
 	terminal = ">_",
 	activity = "∿",
+	play = "▶",
+	["chevron-right"] = "›",
 }
 
 local iconApi
@@ -1956,52 +1958,111 @@ function Page:AddMainButton(opts)
 	local card = new("TextButton", {
 		Size = UDim2.fromOffset(CARD_W, 64),
 		BackgroundColor3 = T.selected,
-		BackgroundTransparency = 0.12,
+		BackgroundTransparency = 0.04,
 		AutoButtonColor = false,
 		Text = "",
 		BorderSizePixel = 0,
 	}, slot)
-	round(card, 10)
+	round(card, 12)
 	g.card = card
-	stroke(card, T.accent2, 0.6, 1)
+	local cs = stroke(card, T.accent2, 0.55, 1)
+	local press = new("UIScale", { Scale = 1 }, card)
+	local sheen = new("Frame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = T.white,
+		BorderSizePixel = 0,
+	}, card)
+	round(sheen, 12)
+	new("UIGradient", { Rotation = 90, Transparency = NumberSequence.new(0.84, 1) }, sheen)
+	local flash = new("Frame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = T.white,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ZIndex = 4,
+	}, card)
+	round(flash, 12)
+
+	local badge = new("Frame", {
+		Position = UDim2.fromOffset(14, 14),
+		Size = UDim2.fromOffset(36, 36),
+		BackgroundColor3 = T.black,
+		BackgroundTransparency = 0.72,
+		BorderSizePixel = 0,
+	}, card)
+	round(badge, 10)
+	stroke(badge, T.white, 0.86)
+	makeIcon(badge, opts.Icon or "play", 18, T.white, {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+	})
+
 	local title = label(card, {
-		Position = UDim2.fromOffset(16, desc == "" and 0 or 8),
-		Size = UDim2.fromOffset(CARD_W - 32, desc == "" and 64 or 26),
+		Position = UDim2.fromOffset(62, desc == "" and 0 or 11),
+		Size = UDim2.fromOffset(CARD_W - 110, desc == "" and 64 or 22),
 		Text = name,
 		Font = Enum.Font.GothamBold,
-		TextSize = 17,
+		TextSize = 16,
 		TextColor3 = T.white,
-		TextXAlignment = Enum.TextXAlignment.Center,
+		TextTruncate = Enum.TextTruncate.AtEnd,
 	})
 	if desc ~= "" then
 		label(card, {
-			Position = UDim2.fromOffset(16, 34),
-			Size = UDim2.fromOffset(CARD_W - 32, 20),
+			Position = UDim2.fromOffset(62, 33),
+			Size = UDim2.fromOffset(CARD_W - 110, 18),
 			Text = desc,
-			TextSize = 13,
+			TextSize = 12,
 			TextColor3 = T.white,
-			TextTransparency = 0.25,
-			TextXAlignment = Enum.TextXAlignment.Center,
+			TextTransparency = 0.3,
+			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
 	end
+
+	local chev = makeIcon(card, "chevron-right", 18, T.white, {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromOffset(CARD_W - 28, 32),
+	})
+	fadeIcon(chev, 0.4)
+
+	local function release()
+		tw(press, { Scale = 1 }, 0.35, Enum.EasingStyle.Back)
+		tw(sheen, { BackgroundTransparency = 0 }, 0.2)
+	end
+
 	card.MouseEnter:Connect(function()
-		tw(card, { BackgroundTransparency = 0 }, 0.15)
+		tw(card, { BackgroundTransparency = 0 }, 0.18)
+		tw(cs, { Transparency = 0.3 }, 0.18)
+		tw(chev, { Position = UDim2.fromOffset(CARD_W - 23, 32) }, 0.22)
+		fadeIcon(chev, 0)
 	end)
 	card.MouseLeave:Connect(function()
-		tw(card, { BackgroundTransparency = 0.12 }, 0.15)
+		tw(card, { BackgroundTransparency = 0.04 }, 0.18)
+		tw(cs, { Transparency = 0.55 }, 0.18)
+		tw(chev, { Position = UDim2.fromOffset(CARD_W - 28, 32) }, 0.22)
+		fadeIcon(chev, 0.4)
+		release()
 	end)
-	card.MouseButton1Down:Connect(function()
-		tw(card, { BackgroundTransparency = 0.3 }, 0.06)
+	card.InputBegan:Connect(function(i)
+		if isPress(i) then
+			tw(press, { Scale = 0.975 }, 0.08, Enum.EasingStyle.Quad)
+			tw(sheen, { BackgroundTransparency = 1 }, 0.08)
+			i.Changed:Connect(function()
+				if i.UserInputState == Enum.UserInputState.End then
+					release()
+				end
+			end)
+		end
 	end)
-	card.MouseButton1Up:Connect(function()
-		tw(card, { BackgroundTransparency = 0 }, 0.12)
-	end)
+
 	local function fire()
+		flash.BackgroundTransparency = 0.82
+		tw(flash, { BackgroundTransparency = 1 }, 0.4)
 		if opts.Callback then
 			task.spawn(opts.Callback)
 		end
 	end
-	card.MouseButton1Click:Connect(fire)
+	card.Activated:Connect(fire)
+
 	table.insert(W.groups, g)
 	table.insert(self.groups, g)
 	W:_refresh()
@@ -2046,7 +2107,7 @@ end
 
 function Window:_computeScale()
 	local v = self.ui.gui.AbsoluteSize
-	local s = self:_fit() * self.userScale
+	local s = self.manualScale or (self:_fit() * self.cfg.Scale)
 	return math.clamp(s, 0.4, math.max(0.4, math.min(v.X / 940, v.Y / 560)))
 end
 
@@ -2373,6 +2434,7 @@ function Window:Open()
 	self.token += 1
 	self.isOpen = true
 	self.following = false
+	self.settleAt = os.clock() + 0.75
 	self.target = self.off
 	self.baseScale = self:_computeScale()
 	self:_layoutHandles(self.baseScale)
@@ -2495,26 +2557,40 @@ end
 
 local function attachResize(W, frame, cx, cy)
 	frame.InputBegan:Connect(function(i)
-		if isPress(i) and not dragFn and W.isOpen then
-			local ui = W.ui
-			local pos, size = ui.main.AbsolutePosition, ui.main.AbsoluteSize
-			local ox = cx == 1 and pos.X or pos.X + size.X
-			local oy = cy == 1 and pos.Y or pos.Y + size.Y
-			beginDrag(i, function(p)
-				p = toScreen(p)
-				local v = ui.gui.AbsoluteSize
-				local s = (((p.X - ox) * cx) / 940 + ((p.Y - oy) * cy) / 560) / 2
-				s = math.clamp(s, 0.4, math.max(0.4, math.min(v.X / 940, v.Y / 560)))
-				W.off = Vector2.new(ox + cx * 940 * s / 2 - v.X / 2, oy + cy * 560 * s / 2 - v.Y / 2)
-				W.target = W.off
-				W.following = false
-				ui.shell.Position = UDim2.new(0.5, W.off.X, 0.5, W.off.Y)
-				ui.scale.Scale = s
-				W.baseScale = s
-				W.userScale = s / W:_fit()
-				W:_layoutHandles(s)
-			end)
+		if not isPress(i) or dragFn or not W.isOpen or os.clock() < W.settleAt then
+			return
 		end
+		local ui = W.ui
+		local pos, size = ui.main.AbsolutePosition, ui.main.AbsoluteSize
+		local startScale = size.X / 940
+		local center0 = pos + size / 2
+		local anchor = Vector2.new(cx == 1 and pos.X or pos.X + size.X, cy == 1 and pos.Y or pos.Y + size.Y)
+		local corner0 = Vector2.new(cx == 1 and pos.X + size.X or pos.X, cy == 1 and pos.Y + size.Y or pos.Y)
+		local start = Vector2.new(i.Position.X, i.Position.Y)
+		local off0 = W.off
+		local diag = Vector2.new(cx * 940, cy * 560)
+		local diagSq = diag:Dot(diag)
+		local gp, gv = ui.gui.AbsolutePosition, ui.gui.AbsoluteSize
+		local limX = cx == 1 and (gp.X + gv.X - anchor.X) or (anchor.X - gp.X)
+		local limY = cy == 1 and (gp.Y + gv.Y - anchor.Y) or (anchor.Y - gp.Y)
+		local minS = math.min(0.4, startScale)
+		local maxS = math.max(startScale, math.min(limX / 940, limY / 560))
+		W.following = false
+		W.resizing = true
+		beginDrag(i, function(p)
+			local corner = corner0 + (Vector2.new(p.X, p.Y) - start)
+			local s = math.clamp((corner - anchor):Dot(diag) / diagSq, minS, maxS)
+			local center = anchor + diag * (s / 2)
+			W.off = off0 + (center - center0)
+			W.target = W.off
+			ui.shell.Position = UDim2.new(0.5, W.off.X, 0.5, W.off.Y)
+			ui.scale.Scale = s
+			W.baseScale = s
+			W.manualScale = s
+			W:_layoutHandles(s)
+		end, function()
+			W.resizing = false
+		end)
 	end)
 end
 
@@ -3041,7 +3117,8 @@ function UI:CreateWindow(cfg)
 		isOpen = false,
 		token = 0,
 		following = false,
-		userScale = c.Scale,
+		settleAt = 0,
+		resizing = false,
 		off = Vector2.new(0, 0),
 		target = Vector2.new(0, 0),
 		islandPos = UDim2.new(0.5, 0, 0, 27),
@@ -3074,7 +3151,7 @@ function UI:CreateWindow(cfg)
 		acc += dt
 		frames += 1
 		if acc >= 0.5 then
-			if W.ui.fpsLabel then
+			if W.ui.fpsLabel and W.cfg.Island.ShowFPS then
 				W.ui.fpsLabel.Text = math.floor(frames / acc + 0.5) .. " fps"
 			end
 			acc, frames = 0, 0
@@ -3131,10 +3208,17 @@ function UI:CreateWindow(cfg)
 	end)
 
 	W.ui.gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-		W.baseScale = W:_computeScale()
-		W:_layoutHandles(W.baseScale)
+		if W.resizing then
+			return
+		end
+		local sc = W:_computeScale()
+		if math.abs(sc - W.baseScale) < 0.001 then
+			return
+		end
+		W.baseScale = sc
+		W:_layoutHandles(sc)
 		if W.isOpen then
-			tw(W.ui.scale, { Scale = W.baseScale }, 0.25)
+			tw(W.ui.scale, { Scale = sc }, 0.25)
 		end
 	end)
 
@@ -3150,3 +3234,114 @@ function UI:CreateWindow(cfg)
 end
 
 return UI
+"
+local IMAGE = ""
+
+assert(LIBRARY_URL ~= "", "请先在 LIBRARY_URL 中填入 UI 库的 Raw 链接")
+
+local UI = loadstring(game:HttpGet(LIBRARY_URL))()
+
+local Window = UI:CreateWindow({
+	Title = "示例窗口",
+	Subtitle = "Demo",
+	Watermark = "UI Library",
+})
+
+local Page = Window:AddPage({ Name = "控件", Icon = "layout-grid" })
+
+Page:AddMainButton({
+	Name = "主按钮",
+	Callback = function()
+		print("主按钮被点击")
+	end,
+})
+
+local Basic = Page:AddGroup({
+	Name = "基础控件",
+	Description = "点击展开",
+	Toggle = true,
+	Callback = function(on)
+		print("总开关", on)
+	end,
+})
+
+Basic:AddToggle({
+	Name = "开关",
+	Callback = function(on)
+		print("开关", on)
+	end,
+})
+
+local slider = Basic:AddSlider({
+	Name = "滑块",
+	Min = 0,
+	Max = 100,
+	Default = 50,
+	Callback = function(value)
+		print("滑块", value)
+	end,
+})
+
+Basic:AddDropdown({
+	Name = "下拉",
+	Options = { "A", "B", "C" },
+	Callback = function(value)
+		print("下拉", value)
+	end,
+})
+
+Basic:AddMultiDropdown({
+	Name = "多选",
+	Options = { "A", "B", "C" },
+	Default = { "A" },
+	Callback = function(list)
+		print("多选", table.concat(list, ","))
+	end,
+})
+
+Basic:AddColorPicker({
+	Name = "取色器",
+	Default = Color3.fromRGB(255, 120, 80),
+	Callback = function(color)
+		print("颜色", color)
+	end,
+})
+
+Basic:AddKeybind({
+	Name = "按键",
+	Default = Enum.KeyCode.E,
+	OnPress = function()
+		print("按下按键")
+	end,
+})
+
+Basic:AddButton({
+	Name = "按钮",
+	Callback = function()
+		print("按钮被点击")
+	end,
+})
+
+Basic:AddTextBox({
+	Name = "输入框",
+	Placeholder = "输入文字",
+	Callback = function(text)
+		print("输入", text)
+	end,
+})
+
+Basic:AddButton({
+	Name = "读取滑块的值",
+	Callback = function()
+		print("滑块当前值", slider:Get())
+	end,
+})
+
+local Show = Page:AddGroup({ Name = "展示与主题", Description = "图片 / 文字 / 主题" })
+
+Show:AddImage({
+	Image = IMAGE,
+	Text = "图片与文字展示",
+})
+
+Show:AddThemePicker({ Name = "主题" })
