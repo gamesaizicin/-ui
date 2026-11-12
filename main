@@ -17,7 +17,7 @@ local Page = {}
 Page.__index = Page
 local Active = nil
 local CARD_W = 336
-local HEAD_H = 92
+local HEAD_H = 96
 
 local themeKeys = { "bg", "side", "card", "card2", "stroke", "accent", "accent2", "text", "sub", "icon", "selected", "off", "knobOff", "dim", "edge", "island" }
 local baseKeys = { "bg", "side", "card", "card2", "stroke", "accent", "accent2", "text", "sub", "off", "knobOff", "dim", "edge", "island" }
@@ -216,6 +216,9 @@ local function stroke(o, color, transparency, thickness)
 end
 
 local function tw(o, props, t, style, dir)
+	if typeof(o) == "Instance" and o.Parent == nil then
+		return
+	end
 	for k, v in pairs(props) do
 		if colorProps[k] and typeof(v) == "Color3" then
 			bindColor(o, k, v)
@@ -256,6 +259,7 @@ local glyphs = {
 	minus = "—",
 	["chevron-down"] = "⌄",
 	check = "✓",
+	x = "✕",
 	terminal = ">_",
 	activity = "∿",
 	play = "▶",
@@ -838,19 +842,19 @@ local function newGroup(W, page, opts)
 
 		textW = hasToggle and (CARD_W - 170) or (CARD_W - 110)
 		label(card, {
-			Position = UDim2.fromOffset(18, desc == "" and 34 or 20),
-			Size = UDim2.fromOffset(textW, 24),
+			Position = UDim2.fromOffset(18, desc == "" and 35 or 20),
+			Size = UDim2.fromOffset(textW, 26),
 			Text = name,
 			Font = Enum.Font.GothamBold,
-			TextSize = 16,
+			TextSize = 17,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
 		if desc ~= "" then
 			label(card, {
-				Position = UDim2.fromOffset(18, 50),
-				Size = UDim2.fromOffset(textW, 18),
+				Position = UDim2.fromOffset(18, 51),
+				Size = UDim2.fromOffset(textW, 20),
 				Text = desc,
-				TextSize = 14,
+				TextSize = 15,
 				TextColor3 = T.sub,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			})
@@ -895,9 +899,9 @@ local function newGroup(W, page, opts)
 		end
 	end
 
-	local track, setSwitch = buildSwitch(card, 54, 30)
+	local track, setSwitch = buildSwitch(card, 58, 32)
 	track.AnchorPoint = Vector2.new(1, 0.5)
-	track.Position = UDim2.fromOffset(CARD_W - 72, headH / 2)
+	track.Position = UDim2.fromOffset(CARD_W - 74, headH / 2)
 	track.Visible = hasToggle and not hidden
 
 	local body = new("Frame", {
@@ -942,7 +946,7 @@ local function newGroup(W, page, opts)
 				c.row.Position = pos
 				c.row.Size = size
 			end
-			y += c.h + 10
+			y += c.h + 12
 		end
 		local total = hidden and math.max(0, y - 6) or (headH + 2 + y + 6)
 		setHeight(g.expanded and total or headH, animate)
@@ -1034,16 +1038,16 @@ local function newGroup(W, page, opts)
 	function g:AddToggle(o)
 		o = o or {}
 		local row = newRow()
-		addControl(row, 32)
+		addControl(row, 36)
 		label(row, {
-			Size = UDim2.fromOffset(200, 32),
+			Size = UDim2.fromOffset(204, 36),
 			Text = o.Name or "Toggle",
-			TextSize = 14,
+			TextSize = 15,
 			TextColor3 = T.sub,
 		})
-		local tr, set = buildSwitch(row, 44, 24)
+		local tr, set = buildSwitch(row, 50, 28)
 		tr.AnchorPoint = Vector2.new(1, 0.5)
-		tr.Position = UDim2.fromOffset(CARD_W - 32, 16)
+		tr.Position = UDim2.fromOffset(CARD_W - 32, 18)
 		local key = ctlKey(o.Flag or o.Name or "Toggle")
 		local value = o.Default and true or false
 		local saved = loadCtl(key)
@@ -1089,46 +1093,46 @@ local function newGroup(W, page, opts)
 		local W2 = CARD_W - 32
 		local TW = W2 - 24
 		local row = newRow()
-		addControl(row, 46)
+		addControl(row, 52)
 		label(row, {
-			Size = UDim2.fromOffset(180, 20),
+			Size = UDim2.fromOffset(184, 22),
 			Text = o.Name or "Slider",
-			TextSize = 14,
+			TextSize = 15,
 			TextColor3 = T.sub,
 		})
 		local valueLbl = label(row, {
-			Position = UDim2.fromOffset(W2 - 120, 0),
-			Size = UDim2.fromOffset(120, 20),
+			Position = UDim2.fromOffset(W2 - 124, 0),
+			Size = UDim2.fromOffset(124, 22),
 			TextXAlignment = Enum.TextXAlignment.Right,
-			TextSize = 14,
+			TextSize = 15,
 			Font = Enum.Font.GothamBold,
 			TextColor3 = T.accent2,
 		})
 		local trackBar = new("Frame", {
-			Position = UDim2.fromOffset(12, 31),
-			Size = UDim2.fromOffset(TW, 6),
+			Position = UDim2.fromOffset(12, 35),
+			Size = UDim2.fromOffset(TW, 7),
 			BackgroundColor3 = T.off,
 			BorderSizePixel = 0,
 		}, row)
 		round(trackBar, 3)
 		local fill = new("Frame", {
-			Size = UDim2.fromOffset(0, 6),
+			Size = UDim2.fromOffset(0, 7),
 			BackgroundColor3 = T.selected,
 			BorderSizePixel = 0,
 		}, trackBar)
 		round(fill, 3)
 		local knob = new("Frame", {
 			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromOffset(0, 3),
-			Size = UDim2.fromOffset(16, 16),
+			Position = UDim2.fromOffset(0, 3.5),
+			Size = UDim2.fromOffset(18, 18),
 			BackgroundColor3 = T.white,
 			BorderSizePixel = 0,
 		}, trackBar)
-		round(knob, 8)
+		round(knob, 9)
 		stroke(knob, T.selected, 0.1, 2)
 		local hitBar = new("TextButton", {
-			Position = UDim2.fromOffset(0, 17),
-			Size = UDim2.fromOffset(W2, 30),
+			Position = UDim2.fromOffset(0, 19),
+			Size = UDim2.fromOffset(W2, 34),
 			BackgroundTransparency = 1,
 			Text = "",
 			AutoButtonColor = false,
@@ -1140,11 +1144,11 @@ local function newGroup(W, page, opts)
 			value = v
 			local a = (v - min) / (max - min)
 			if instant then
-				fill.Size = UDim2.fromOffset(a * TW, 6)
-				knob.Position = UDim2.fromOffset(a * TW, 3)
+				fill.Size = UDim2.fromOffset(a * TW, 7)
+				knob.Position = UDim2.fromOffset(a * TW, 3.5)
 			else
-				tw(fill, { Size = UDim2.fromOffset(a * TW, 6) }, 0.1)
-				tw(knob, { Position = UDim2.fromOffset(a * TW, 3) }, 0.1)
+				tw(fill, { Size = UDim2.fromOffset(a * TW, 7) }, 0.1)
+				tw(knob, { Position = UDim2.fromOffset(a * TW, 3.5) }, 0.1)
 			end
 			valueLbl.Text = (step < 1 and string.format("%.2f", v) or tostring(v)) .. suffix
 			setFlag(o.Flag, v)
@@ -1167,12 +1171,12 @@ local function newGroup(W, page, opts)
 		end
 		hitBar.InputBegan:Connect(function(i)
 			if isPress(i) and not dragFn then
-				tw(knob, { Size = UDim2.fromOffset(20, 20) }, 0.15, Enum.EasingStyle.Back)
+				tw(knob, { Size = UDim2.fromOffset(22, 22) }, 0.15, Enum.EasingStyle.Back)
 				beginDrag(i, function(p)
 					local a = math.clamp((p.X - trackBar.AbsolutePosition.X) / trackBar.AbsoluteSize.X, 0, 1)
 					set(min + a * (max - min), true, false)
 				end, function()
-					tw(knob, { Size = UDim2.fromOffset(16, 16) }, 0.2)
+					tw(knob, { Size = UDim2.fromOffset(18, 18) }, 0.2)
 				end)
 			end
 		end)
@@ -1191,7 +1195,7 @@ local function newGroup(W, page, opts)
 		local options = o.Options or {}
 		local W2 = CARD_W - 32
 		local row = newRow()
-		local c = addControl(row, 38)
+		local c = addControl(row, 44)
 		local key = ctlKey(o.Flag or o.Name or "Dropdown")
 		local selected = o.Default or options[1]
 		local saved = loadCtl(key)
@@ -1207,7 +1211,7 @@ local function newGroup(W, page, opts)
 			task.defer(o.Callback, selected)
 		end
 		local head = new("TextButton", {
-			Size = UDim2.fromOffset(W2, 38),
+			Size = UDim2.fromOffset(W2, 44),
 			BackgroundColor3 = T.card2,
 			BackgroundTransparency = 0.2,
 			AutoButtonColor = false,
@@ -1218,35 +1222,35 @@ local function newGroup(W, page, opts)
 		stroke(head, T.white, 0.9)
 		label(head, {
 			Position = UDim2.fromOffset(12, 0),
-			Size = UDim2.fromOffset(120, 38),
+			Size = UDim2.fromOffset(120, 44),
 			Text = o.Name or "Dropdown",
-			TextSize = 14,
+			TextSize = 15,
 			TextColor3 = T.sub,
 		})
 		local valueLbl = label(head, {
 			Position = UDim2.fromOffset(W2 - 170, 0),
-			Size = UDim2.fromOffset(136, 38),
+			Size = UDim2.fromOffset(136, 44),
 			Text = tostring(selected),
 			TextXAlignment = Enum.TextXAlignment.Right,
-			TextSize = 14,
+			TextSize = 15,
 			Font = Enum.Font.GothamBold,
 			TextColor3 = T.accent2,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
-		local arrow = makeIcon(head, "chevron-down", 16, T.icon, {
+		local arrow = makeIcon(head, "chevron-down", 18, T.icon, {
 			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromOffset(W2 - 18, 19),
+			Position = UDim2.fromOffset(W2 - 18, 22),
 		})
 		local listFrame = new("Frame", {
-			Position = UDim2.fromOffset(0, 44),
-			Size = UDim2.fromOffset(W2, #options * 30),
+			Position = UDim2.fromOffset(0, 50),
+			Size = UDim2.fromOffset(W2, #options * 34),
 			BackgroundTransparency = 1,
 		}, row)
 		local open = false
 		local items = {}
 		local function close()
 			open = false
-			c.h = 38
+			c.h = 44
 			tw(arrow, { Rotation = 0 }, 0.3)
 			layoutBody(true)
 		end
@@ -1266,14 +1270,14 @@ local function newGroup(W, page, opts)
 		end
 		for i, v in ipairs(options) do
 			local b = new("TextButton", {
-				Position = UDim2.fromOffset(0, (i - 1) * 30),
-				Size = UDim2.fromOffset(W2, 28),
+				Position = UDim2.fromOffset(0, (i - 1) * 34),
+				Size = UDim2.fromOffset(W2, 32),
 				BackgroundColor3 = T.accent,
 				BackgroundTransparency = 1,
 				AutoButtonColor = false,
 				Text = "   " .. tostring(v),
 				Font = Enum.Font.GothamMedium,
-				TextSize = 14,
+				TextSize = 15,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextColor3 = (v == selected) and T.accent2 or T.text,
 				BorderSizePixel = 0,
@@ -1297,7 +1301,7 @@ local function newGroup(W, page, opts)
 				return
 			end
 			open = true
-			c.h = 44 + #options * 30
+			c.h = 50 + #options * 34
 			tw(arrow, { Rotation = 180 }, 0.3)
 			layoutBody(true)
 		end)
@@ -1321,7 +1325,7 @@ local function newGroup(W, page, opts)
 		local W2 = CARD_W - 32
 		local key = ctlKey(o.Flag or o.Name or "MultiDropdown")
 		local row = newRow()
-		local c = addControl(row, 38)
+		local c = addControl(row, 44)
 		local selected = {}
 		local initial = o.Default or {}
 		local saved = loadCtl(key)
@@ -1350,7 +1354,7 @@ local function newGroup(W, page, opts)
 		end
 		setFlag(o.Flag, collect())
 		local head = new("TextButton", {
-			Size = UDim2.fromOffset(W2, 38),
+			Size = UDim2.fromOffset(W2, 44),
 			BackgroundColor3 = T.card2,
 			BackgroundTransparency = 0.3,
 			AutoButtonColor = false,
@@ -1361,24 +1365,24 @@ local function newGroup(W, page, opts)
 		stroke(head, T.white, 0.92)
 		label(head, {
 			Position = UDim2.fromOffset(12, 0),
-			Size = UDim2.fromOffset(90, 38),
+			Size = UDim2.fromOffset(90, 44),
 			Text = o.Name or "MultiDropdown",
-			TextSize = 14,
+			TextSize = 15,
 			TextColor3 = T.sub,
 		})
 		local summary = label(head, {
-			Position = UDim2.fromOffset(104, 0),
-			Size = UDim2.fromOffset(W2 - 170, 38),
+			Position = UDim2.fromOffset(106, 0),
+			Size = UDim2.fromOffset(W2 - 172, 44),
 			Text = "",
 			TextXAlignment = Enum.TextXAlignment.Right,
-			TextSize = 14,
+			TextSize = 15,
 			Font = Enum.Font.GothamBold,
 			TextColor3 = T.accent2,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
 		local badge = new("Frame", {
-			Position = UDim2.fromOffset(W2 - 58, 10),
-			Size = UDim2.fromOffset(24, 18),
+			Position = UDim2.fromOffset(W2 - 60, 12),
+			Size = UDim2.fromOffset(26, 20),
 			BackgroundColor3 = T.selected,
 			BorderSizePixel = 0,
 			Visible = false,
@@ -1388,14 +1392,14 @@ local function newGroup(W, page, opts)
 		local badgeText = label(badge, {
 			Size = UDim2.fromScale(1, 1),
 			Text = "0",
-			TextSize = 11,
+			TextSize = 12,
 			Font = Enum.Font.GothamBold,
 			TextColor3 = T.white,
 			TextXAlignment = Enum.TextXAlignment.Center,
 		})
-		local arrow = makeIcon(head, "chevron-down", 16, T.icon, {
+		local arrow = makeIcon(head, "chevron-down", 18, T.icon, {
 			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromOffset(W2 - 18, 19),
+			Position = UDim2.fromOffset(W2 - 18, 22),
 		})
 		local function refreshSummary(animate)
 			local l = collect()
@@ -1412,8 +1416,8 @@ local function newGroup(W, page, opts)
 		end
 		refreshSummary(false)
 		local listFrame = new("Frame", {
-			Position = UDim2.fromOffset(0, 44),
-			Size = UDim2.fromOffset(W2, #options * 30),
+			Position = UDim2.fromOffset(0, 50),
+			Size = UDim2.fromOffset(W2, #options * 34),
 			BackgroundTransparency = 1,
 		}, row)
 		local open = false
@@ -1439,8 +1443,8 @@ local function newGroup(W, page, opts)
 		for i, v in ipairs(options) do
 			local on = selected[v] == true
 			local b = new("TextButton", {
-				Position = UDim2.fromOffset(0, (i - 1) * 30),
-				Size = UDim2.fromOffset(W2, 28),
+				Position = UDim2.fromOffset(0, (i - 1) * 34),
+				Size = UDim2.fromOffset(W2, 32),
 				BackgroundColor3 = T.white,
 				BackgroundTransparency = 1,
 				AutoButtonColor = false,
@@ -1449,14 +1453,14 @@ local function newGroup(W, page, opts)
 			}, listFrame)
 			round(b, 7)
 			local box = new("Frame", {
-				Position = UDim2.fromOffset(10, 5),
-				Size = UDim2.fromOffset(18, 18),
+				Position = UDim2.fromOffset(10, 6),
+				Size = UDim2.fromOffset(20, 20),
 				BackgroundColor3 = on and T.selected or T.off,
 				BorderSizePixel = 0,
 			}, b)
-			round(box, 5)
+			round(box, 6)
 			local boxStroke = stroke(box, T.white, on and 1 or 0.8)
-			local tick = makeIcon(box, "check", 12, T.white, {
+			local tick = makeIcon(box, "check", 13, T.white, {
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				Position = UDim2.fromScale(0.5, 0.5),
 				ImageTransparency = on and 0 or 1,
@@ -1466,10 +1470,10 @@ local function newGroup(W, page, opts)
 				tg.TextTransparency = on and 0 or 1
 			end
 			local nameLbl = label(b, {
-				Position = UDim2.fromOffset(38, 0),
-				Size = UDim2.fromOffset(W2 - 46, 28),
+				Position = UDim2.fromOffset(42, 0),
+				Size = UDim2.fromOffset(W2 - 50, 32),
 				Text = tostring(v),
-				TextSize = 14,
+				TextSize = 15,
 				TextColor3 = on and T.text or T.dim,
 			})
 			items[i] = { box = box, stroke = boxStroke, tick = tick, name = nameLbl }
@@ -1487,7 +1491,7 @@ local function newGroup(W, page, opts)
 		end
 		head.MouseButton1Click:Connect(function()
 			open = not open
-			c.h = open and (44 + #options * 30) or 38
+			c.h = open and (50 + #options * 34) or 44
 			tw(arrow, { Rotation = open and 180 or 0 }, 0.3)
 			layoutBody(true)
 			if open then
@@ -1527,7 +1531,7 @@ local function newGroup(W, page, opts)
 		o = o or {}
 		local W2 = CARD_W - 32
 		local row = newRow()
-		local c = addControl(row, 34)
+		local c = addControl(row, 38)
 		local key = ctlKey(o.Flag or o.Name or "ColorPicker")
 		local h, s, v = Color3.toHSV(o.Default or T.accent)
 		local saved = loadCtl(key)
@@ -1541,20 +1545,20 @@ local function newGroup(W, page, opts)
 			restored = true
 		end
 		local head = new("TextButton", {
-			Size = UDim2.fromOffset(W2, 34),
+			Size = UDim2.fromOffset(W2, 38),
 			BackgroundTransparency = 1,
 			Text = "",
 			AutoButtonColor = false,
 		}, row)
 		label(head, {
-			Size = UDim2.fromOffset(180, 34),
+			Size = UDim2.fromOffset(180, 38),
 			Text = o.Name or "ColorPicker",
-			TextSize = 14,
+			TextSize = 15,
 			TextColor3 = T.sub,
 		})
 		local swatch = new("Frame", {
-			Position = UDim2.fromOffset(W2 - 44, 6),
-			Size = UDim2.fromOffset(44, 22),
+			Position = UDim2.fromOffset(W2 - 48, 7),
+			Size = UDim2.fromOffset(48, 26),
 			BackgroundColor3 = Color3.fromHSV(h, s, v),
 			BorderSizePixel = 0,
 		}, head)
@@ -1563,7 +1567,7 @@ local function newGroup(W, page, opts)
 		stroke(swatch, T.white, 0.6)
 
 		local svBox = new("TextButton", {
-			Position = UDim2.fromOffset(10, 42),
+			Position = UDim2.fromOffset(10, 46),
 			Size = UDim2.fromOffset(W2 - 40, 100),
 			AutoButtonColor = false,
 			Text = "",
@@ -1596,7 +1600,7 @@ local function newGroup(W, page, opts)
 		stroke(svCur, T.white, 0, 2)
 
 		local hueBar = new("TextButton", {
-			Position = UDim2.fromOffset(W2 - 20, 42),
+			Position = UDim2.fromOffset(W2 - 20, 46),
 			Size = UDim2.fromOffset(14, 100),
 			AutoButtonColor = false,
 			Text = "",
@@ -1663,7 +1667,7 @@ local function newGroup(W, page, opts)
 		local open = false
 		head.MouseButton1Click:Connect(function()
 			open = not open
-			c.h = open and 156 or 34
+			c.h = open and 160 or 38
 			layoutBody(true)
 		end)
 		return {
@@ -1681,11 +1685,11 @@ local function newGroup(W, page, opts)
 		o = o or {}
 		local W2 = CARD_W - 32
 		local row = newRow()
-		addControl(row, 32)
+		addControl(row, 36)
 		label(row, {
-			Size = UDim2.fromOffset(160, 32),
+			Size = UDim2.fromOffset(160, 36),
 			Text = o.Name or "Keybind",
-			TextSize = 14,
+			TextSize = 15,
 			TextColor3 = T.sub,
 		})
 		local key = ctlKey(o.Flag or o.Name or "Keybind")
@@ -1704,14 +1708,14 @@ local function newGroup(W, page, opts)
 		local entry = { key = current }
 		table.insert(W.binds, entry)
 		local btn = new("TextButton", {
-			Position = UDim2.fromOffset(W2 - 90, 3),
-			Size = UDim2.fromOffset(90, 26),
+			Position = UDim2.fromOffset(W2 - 96, 3),
+			Size = UDim2.fromOffset(96, 30),
 			BackgroundColor3 = T.card2,
 			BackgroundTransparency = 0.2,
 			AutoButtonColor = false,
 			Text = "",
 			Font = Enum.Font.GothamBold,
-			TextSize = 12,
+			TextSize = 13,
 			TextColor3 = T.accent2,
 			BorderSizePixel = 0,
 		}, row)
@@ -1763,34 +1767,34 @@ local function newGroup(W, page, opts)
 		local desc = o.Description or o.Desc or ""
 		local caption = o.Text or o.ButtonText or W.S.Run
 		local row = newRow()
-		addControl(row, 40)
+		addControl(row, 46)
 		label(row, {
-			Position = UDim2.fromOffset(0, desc == "" and 11 or 2),
-			Size = UDim2.fromOffset(W2 - 96, 18),
+			Position = UDim2.fromOffset(0, desc == "" and 14 or 4),
+			Size = UDim2.fromOffset(W2 - 100, 20),
 			Text = o.Name or "Button",
-			TextSize = 14,
+			TextSize = 15,
 			TextColor3 = T.sub,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
 		if desc ~= "" then
 			label(row, {
-				Position = UDim2.fromOffset(0, 20),
-				Size = UDim2.fromOffset(W2 - 96, 16),
+				Position = UDim2.fromOffset(0, 24),
+				Size = UDim2.fromOffset(W2 - 100, 18),
 				Text = desc,
-				TextSize = 13,
+				TextSize = 14,
 				TextColor3 = T.dim,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			})
 		end
 		local b = new("TextButton", {
 			AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.fromOffset(W2, 20),
-			Size = UDim2.fromOffset(78, 28),
+			Position = UDim2.fromOffset(W2, 23),
+			Size = UDim2.fromOffset(88, 32),
 			BackgroundColor3 = T.off,
 			AutoButtonColor = false,
 			Text = tostring(caption),
 			Font = Enum.Font.GothamBold,
-			TextSize = 13,
+			TextSize = 14,
 			TextColor3 = T.text,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 			BorderSizePixel = 0,
@@ -1831,16 +1835,16 @@ local function newGroup(W, page, opts)
 		o = o or {}
 		local W2 = CARD_W - 32
 		local row = newRow()
-		addControl(row, 38)
+		addControl(row, 44)
 		label(row, {
-			Size = UDim2.fromOffset(100, 38),
+			Size = UDim2.fromOffset(100, 44),
 			Text = o.Name or "TextBox",
-			TextSize = 14,
+			TextSize = 15,
 			TextColor3 = T.sub,
 		})
 		local field = new("Frame", {
-			Position = UDim2.fromOffset(108, 4),
-			Size = UDim2.fromOffset(W2 - 108, 30),
+			Position = UDim2.fromOffset(108, 5),
+			Size = UDim2.fromOffset(W2 - 108, 34),
 			BackgroundColor3 = T.card2,
 			BackgroundTransparency = 0.3,
 			BorderSizePixel = 0,
@@ -1857,14 +1861,14 @@ local function newGroup(W, page, opts)
 		end
 		local box = new("TextBox", {
 			Position = UDim2.fromOffset(8, 0),
-			Size = UDim2.fromOffset(W2 - 124, 30),
+			Size = UDim2.fromOffset(W2 - 124, 34),
 			BackgroundTransparency = 1,
 			Text = value,
 			PlaceholderText = o.Placeholder or "",
 			PlaceholderColor3 = T.sub,
 			TextColor3 = T.text,
 			Font = Enum.Font.GothamMedium,
-			TextSize = 14,
+			TextSize = 15,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			ClearTextOnFocus = o.ClearOnFocus == true,
 			TextTruncate = Enum.TextTruncate.AtEnd,
@@ -2093,7 +2097,7 @@ local function newGroup(W, page, opts)
 		local chipW = (W2 - 8) / 2
 		local rows = math.ceil(#Themes / 2)
 		local row = newRow()
-		addControl(row, rows * 44 - 6)
+		addControl(row, rows * 48 - 6)
 		local chips = {}
 		local function mark(id)
 			for tid, ch in pairs(chips) do
@@ -2105,10 +2109,10 @@ local function newGroup(W, page, opts)
 		table.insert(W.themeMarks, mark)
 		for i, th in ipairs(Themes) do
 			local x = ((i - 1) % 2) * (chipW + 8)
-			local y = math.floor((i - 1) / 2) * 44
+			local y = math.floor((i - 1) / 2) * 48
 			local b = new("TextButton", {
 				Position = UDim2.fromOffset(x, y),
-				Size = UDim2.fromOffset(chipW, 38),
+				Size = UDim2.fromOffset(chipW, 42),
 				BackgroundColor3 = T.card2,
 				BackgroundTransparency = 0.3,
 				AutoButtonColor = false,
@@ -2120,8 +2124,8 @@ local function newGroup(W, page, opts)
 			local dotColors = { th.p.bg, th.p.card, th.p.accent }
 			for d, col in ipairs(dotColors) do
 				local dot = new("Frame", {
-					Position = UDim2.fromOffset(10 + (d - 1) * 12, 14),
-					Size = UDim2.fromOffset(10, 10),
+					Position = UDim2.fromOffset(10 + (d - 1) * 13, 16),
+					Size = UDim2.fromOffset(11, 11),
 					BackgroundColor3 = col,
 					BorderSizePixel = 0,
 				}, b)
@@ -2131,9 +2135,9 @@ local function newGroup(W, page, opts)
 			end
 			local nameLbl = label(b, {
 				Position = UDim2.fromOffset(52, 0),
-				Size = UDim2.fromOffset(chipW - 58, 38),
+				Size = UDim2.fromOffset(chipW - 58, 42),
 				Text = th.name,
-				TextSize = 14,
+				TextSize = 15,
 				TextColor3 = T.dim,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			})
@@ -2711,6 +2715,9 @@ function Window:_applyTransparency()
 end
 
 function Window:_pulse()
+	if self.destroyed then
+		return
+	end
 	local s = self.ui.islandScale
 	if not s then
 		return
@@ -2722,6 +2729,9 @@ function Window:_pulse()
 end
 
 function Window:Open()
+	if self.destroyed then
+		return
+	end
 	local ui = self.ui
 	self.token += 1
 	self.isOpen = true
@@ -2744,6 +2754,9 @@ function Window:Open()
 end
 
 function Window:Close()
+	if self.destroyed then
+		return
+	end
 	local ui = self.ui
 	self.token += 1
 	local my = self.token
@@ -2773,22 +2786,54 @@ function Window:Toggle()
 	end
 end
 
+function Window:ShowDestroyConfirm()
+	if self.destroyed then
+		return
+	end
+	local ui = self.ui
+	if not ui.confirm or ui.confirm.open then
+		return
+	end
+	ui.confirm.open = true
+	ui.confirm.layer.Visible = true
+	ui.confirm.layer.BackgroundTransparency = 1
+	ui.confirm.scale.Scale = 0.92
+	tw(ui.confirm.layer, { BackgroundTransparency = 0.55 }, 0.2)
+	tw(ui.confirm.scale, { Scale = 1 }, 0.28, Enum.EasingStyle.Back)
+end
+
 function Window:Destroy()
+	if self.destroyed then
+		return
+	end
+	self.destroyed = true
+	self.isOpen = false
+	self.following = false
+	self.listening = nil
+	self.token += 1
+	if Active == self then
+		Active = nil
+	end
 	for _, cn in ipairs(self.conns) do
-		cn:Disconnect()
+		pcall(function()
+			cn:Disconnect()
+		end)
 	end
 	self.conns = {}
 	dragFn, dragInput, dragEnd = nil, nil, nil
 	scrollLock = function() end
+	self.groups = {}
+	self.pages = {}
+	self.ordered = {}
+	self.themeMarks = {}
+	self.binds = {}
 	pcall(function()
 		self.ui.blur:Destroy()
 	end)
 	pcall(function()
 		self.ui.gui:Destroy()
 	end)
-	if Active == self then
-		Active = nil
-	end
+	self.ui = {}
 end
 
 local function buildShell(W)
@@ -3125,7 +3170,7 @@ local function buildContent(W)
 
 	local minimize = new("TextButton", {
 		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -22, 0.5, 0),
+		Position = UDim2.new(1, -64, 0.5, 0),
 		Size = UDim2.fromOffset(36, 36),
 		BackgroundColor3 = T.white,
 		BackgroundTransparency = 1,
@@ -3148,6 +3193,33 @@ local function buildContent(W)
 	end)
 	minimize.MouseButton1Click:Connect(function()
 		W:Close()
+	end)
+
+	local destroyBtn = new("TextButton", {
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -22, 0.5, 0),
+		Size = UDim2.fromOffset(36, 36),
+		BackgroundColor3 = T.white,
+		BackgroundTransparency = 1,
+		AutoButtonColor = false,
+		Text = "",
+		BorderSizePixel = 0,
+	}, header)
+	round(destroyBtn, 6)
+	local destroyIcon = makeIcon(destroyBtn, "x", 16, T.icon, {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+	})
+	destroyBtn.MouseEnter:Connect(function()
+		tw(destroyBtn, { BackgroundTransparency = 0.88 })
+		tint(destroyIcon, T.white)
+	end)
+	destroyBtn.MouseLeave:Connect(function()
+		tw(destroyBtn, { BackgroundTransparency = 1 })
+		tint(destroyIcon, T.icon)
+	end)
+	destroyBtn.MouseButton1Click:Connect(function()
+		W:ShowDestroyConfirm()
 	end)
 
 	ui.headerLine = new("Frame", {
@@ -3179,6 +3251,121 @@ local function buildContent(W)
 		BorderSizePixel = 0,
 	}, ui.scroll)
 	ui.gridScale = new("UIScale", { Scale = 1 }, ui.grid)
+end
+
+local function buildConfirm(W)
+	local ui, S = W.ui, W.S
+	local layer = new("Frame", {
+		Name = "ConfirmLayer",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = T.black,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Visible = false,
+		Active = true,
+		ZIndex = 120,
+	}, ui.gui)
+	local panel = new("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(320, 164),
+		BackgroundColor3 = T.bg,
+		BackgroundTransparency = 0.02,
+		BorderSizePixel = 0,
+		ZIndex = 121,
+	}, layer)
+	round(panel, 16)
+	stroke(panel, T.edge, 0.72)
+	local panelScale = new("UIScale", { Scale = 0.92 }, panel)
+	local sheen = new("Frame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = T.white,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ZIndex = 122,
+	}, panel)
+	round(sheen, 16)
+	new("UIGradient", {
+		Rotation = 90,
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.96),
+			NumberSequenceKeypoint.new(1, 1),
+		}),
+	}, sheen)
+	label(panel, {
+		Position = UDim2.fromOffset(24, 32),
+		Size = UDim2.fromOffset(272, 28),
+		Text = S.DestroyTitle,
+		Font = Enum.Font.GothamBold,
+		TextSize = 17,
+		TextXAlignment = Enum.TextXAlignment.Center,
+		ZIndex = 123,
+	})
+	local yes = new("TextButton", {
+		Position = UDim2.fromOffset(24, 98),
+		Size = UDim2.fromOffset(126, 38),
+		BackgroundColor3 = T.accent,
+		AutoButtonColor = false,
+		Text = S.DestroyYes,
+		Font = Enum.Font.GothamBold,
+		TextSize = 14,
+		TextColor3 = T.white,
+		BorderSizePixel = 0,
+		ZIndex = 123,
+	}, panel)
+	round(yes, 9)
+	local no = new("TextButton", {
+		Position = UDim2.fromOffset(170, 98),
+		Size = UDim2.fromOffset(126, 38),
+		BackgroundColor3 = T.card2,
+		BackgroundTransparency = 0.2,
+		AutoButtonColor = false,
+		Text = S.DestroyNo,
+		Font = Enum.Font.GothamMedium,
+		TextSize = 14,
+		TextColor3 = T.sub,
+		BorderSizePixel = 0,
+		ZIndex = 123,
+	}, panel)
+	round(no, 9)
+	stroke(no, T.white, 0.88)
+	W:Connect(yes.MouseEnter, function()
+		tw(yes, { BackgroundColor3 = T.accent2 }, 0.16)
+	end)
+	W:Connect(yes.MouseLeave, function()
+		tw(yes, { BackgroundColor3 = T.accent }, 0.18)
+	end)
+	W:Connect(no.MouseEnter, function()
+		tw(no, { BackgroundTransparency = 0.1 }, 0.16)
+		tw(no, { TextColor3 = T.text }, 0.16)
+	end)
+	W:Connect(no.MouseLeave, function()
+		tw(no, { BackgroundTransparency = 0.2 }, 0.18)
+		tw(no, { TextColor3 = T.sub }, 0.18)
+	end)
+	local function close()
+		if not ui.confirm or not ui.confirm.open then
+			return
+		end
+		ui.confirm.open = false
+		tw(panelScale, { Scale = 0.94 }, 0.16, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+		tw(layer, { BackgroundTransparency = 1 }, 0.18)
+		task.delay(0.18, function()
+			if ui.confirm and not ui.confirm.open then
+				layer.Visible = false
+			end
+		end)
+	end
+	W:Connect(no.MouseButton1Click, function()
+		close()
+	end)
+	W:Connect(yes.MouseButton1Click, function()
+		close()
+		task.delay(0.1, function()
+			W:Destroy()
+		end)
+	end)
+	ui.confirm = { layer = layer, panel = panel, scale = panelScale, open = false }
 end
 
 local function buildIsland(W)
@@ -3378,6 +3565,9 @@ function UI:CreateWindow(cfg)
 		Enabled = "已启用 %d 个模块",
 		None = "None",
 		Run = "执行",
+		DestroyTitle = "你真的要销毁 UI 吗？",
+		DestroyYes = "是的",
+		DestroyNo = "不是",
 	}
 	for k, v in pairs(cfg.Strings or {}) do
 		c.Strings[k] = v
@@ -3429,6 +3619,7 @@ function UI:CreateWindow(cfg)
 	buildShell(W)
 	buildSidebar(W)
 	buildContent(W)
+	buildConfirm(W)
 	buildHandles(W)
 	W:_reflow()
 	if c.Island.Enabled then
@@ -3506,7 +3697,7 @@ function UI:CreateWindow(cfg)
 		end
 	end)
 
-	W.ui.gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+	W:Connect(W.ui.gui:GetPropertyChangedSignal("AbsoluteSize"), function()
 		if W.resizing then
 			return
 		end
