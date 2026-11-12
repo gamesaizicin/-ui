@@ -2888,10 +2888,10 @@ function Window:SetPlayerHidden(hidden)
 	self.playerHidden = hidden
 	local ph = self.ui.playerHide
 	if ph then
-		tw(ph.overlay, { BackgroundTransparency = hidden and 0.02 or 1 }, 0.35)
-		tw(ph.avatar, { ImageTransparency = hidden and 1 or 0 }, 0.35)
-		tw(ph.nameLabel, { TextTransparency = hidden and 1 or 0 }, 0.35)
-		tw(ph.userLabel, { TextTransparency = hidden and 1 or 0 }, 0.35)
+		tw(ph.overlay, { BackgroundTransparency = hidden and 0 or 1 }, 0.35)
+tw(ph.avatar, { ImageTransparency = hidden and 1 or 0 }, 0.35)
+tw(ph.nameLabel, { TextTransparency = hidden and 1 or 0 }, 0.35)
+tw(ph.userLabel, { TextTransparency = hidden and 1 or 0 }, 0.35)
 		tw(ph.eyeOff, { ImageTransparency = hidden and 0 or 1 }, 0.35)
 		local g = ph.eyeOff:FindFirstChild("G")
 		if g then
