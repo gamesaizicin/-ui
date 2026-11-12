@@ -1,4 +1,4 @@
-local LIBRARY_URL = "local Players = game:GetService("Players")
+local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -1709,150 +1709,164 @@ local function newGroup(W, page, opts)
 		}
 	end
 
-	function g:AddImage(o)
-		o = o or {}
-		local W2 = CARD_W - 32
-		local textSize = o.TextSize or 15
-		local textPos = o.TextPosition or "Bottom"
-		local text = o.Text or ""
-		local row = newRow()
-		local c = addControl(row, 60)
-		local frame = new("Frame", {
-			Size = UDim2.fromOffset(W2, 60),
-			BackgroundColor3 = T.card2,
-			BackgroundTransparency = 0.3,
-			BorderSizePixel = 0,
-			ClipsDescendants = true,
-		}, row)
-		round(frame, 8)
-		stroke(frame, T.white, 0.92)
-		local img = new("ImageLabel", {
-			Size = UDim2.fromScale(1, 1),
-			BackgroundTransparency = 1,
-			ScaleType = Enum.ScaleType.Crop,
-			Visible = false,
-			BorderSizePixel = 0,
-		}, frame)
-		local scrim = new("Frame", {
-			Size = UDim2.fromScale(1, 1),
-			BackgroundColor3 = T.black,
-			BorderSizePixel = 0,
-			Visible = false,
-			ZIndex = 2,
-		}, frame)
-		local scrimGrad = new("UIGradient", { Rotation = 90 }, scrim)
-		local txt = label(frame, {
-			Position = UDim2.fromOffset(12, 0),
-			Size = UDim2.fromOffset(W2 - 24, 60),
-			Text = text,
-			Font = Enum.Font.GothamBold,
-			TextSize = textSize,
-			TextWrapped = true,
-			ZIndex = 3,
-		})
-		local loaded = false
-		local imgToken = 0
-		local function imgSize()
-			local ok, sz = pcall(function()
-				return img.ContentImageSize
-			end)
-			if ok then
-				return sz
-			end
-			return Vector2.new(2, 1)
-		end
-		local function apply()
-			local h
-			if loaded then
-				local sz = imgSize()
-				local ratio = (sz.X > 0) and (sz.Y / sz.X) or 0.5
-				h = o.Height or math.clamp(math.floor(W2 * ratio), 80, 220)
-				img.Visible = true
-				scrim.Visible = text ~= ""
-				if textPos == "Top" then
-					scrimGrad.Transparency = NumberSequence.new(0.25, 1)
-					txt.TextYAlignment = Enum.TextYAlignment.Top
-					txt.TextXAlignment = Enum.TextXAlignment.Left
-				elseif textPos == "Center" then
-					scrimGrad.Transparency = NumberSequence.new(0.55, 0.55)
-					txt.TextYAlignment = Enum.TextYAlignment.Center
-					txt.TextXAlignment = Enum.TextXAlignment.Center
-				else
-					scrimGrad.Transparency = NumberSequence.new(1, 0.25)
-					txt.TextYAlignment = Enum.TextYAlignment.Bottom
-					txt.TextXAlignment = Enum.TextXAlignment.Left
-				end
-				txt.Position = UDim2.fromOffset(12, 8)
-				txt.Size = UDim2.fromOffset(W2 - 24, h - 16)
-				setc(txt, "TextColor3", T.white)
-				txt.TextStrokeTransparency = 0.7
-			else
-				local th = 0
-				if text ~= "" then
-					th = math.ceil(TextService:GetTextSize(text, textSize, Enum.Font.GothamBold, Vector2.new(W2 - 24, 10000)).Y)
-				end
-				h = math.max(40, th + 22)
-				img.Visible = false
-				scrim.Visible = false
-				txt.Position = UDim2.fromOffset(12, 0)
-				txt.Size = UDim2.fromOffset(W2 - 24, h)
-				txt.TextYAlignment = Enum.TextYAlignment.Center
-				txt.TextXAlignment = Enum.TextXAlignment.Left
-				setc(txt, "TextColor3", T.text)
-				txt.TextStrokeTransparency = 1
-			end
-			tw(frame, { Size = UDim2.fromOffset(W2, h) }, 0.3)
-			c.h = h
-			layoutBody(true)
-		end
-		local function setImage(src)
-			imgToken += 1
-			local my = imgToken
-			loaded = false
-			if src == nil or src == "" then
-				apply()
-				return
-			end
-			loadImageSource(src, function(url)
-				if my ~= imgToken or not img.Parent then
-					return
-				end
-				if not url then
-					apply()
-					return
-				end
-				img.Image = url
-				task.spawn(function()
-					local t = 0
-					while my == imgToken and img.Parent and t < 10 do
-						local sz = imgSize()
-						if sz.X > 0 and sz.Y > 0 then
-							loaded = true
-							apply()
-							return
-						end
-						t += 0.1
-						task.wait(0.1)
-					end
-					if my == imgToken then
-						apply()
-					end
-				end)
-			end)
-		end
-		apply()
-		setImage(o.Image)
-		return {
-			SetImage = function(_, src)
-				setImage(src)
-			end,
-			SetText = function(_, t)
-				text = tostring(t or "")
-				txt.Text = text
-				apply()
-			end,
-		}
-	end
+	function g:AddImage(o, textArg)
+    if type(o) == "table" then
+        local t = {}
+        for k, v in pairs(o) do
+            t[k] = v
+        end
+        if textArg ~= nil then
+            t.Text = tostring(textArg)
+        end
+        o = t
+    else
+        o = {
+            Image = o,
+            Text = textArg ~= nil and tostring(textArg) or "",
+        }
+    end
+    local W2 = CARD_W - 32
+    local textSize = o.TextSize or 15
+    local textPos = o.TextPosition or "Bottom"
+    local text = o.Text or ""
+    local row = newRow()
+    local c = addControl(row, 60)
+    local frame = new("Frame", {
+        Size = UDim2.fromOffset(W2, 60),
+        BackgroundColor3 = T.card2,
+        BackgroundTransparency = 0.3,
+        BorderSizePixel = 0,
+        ClipsDescendants = true,
+    }, row)
+    round(frame, 8)
+    stroke(frame, T.white, 0.92)
+    local img = new("ImageLabel", {
+        Size = UDim2.fromScale(1, 1),
+        BackgroundTransparency = 1,
+        ScaleType = Enum.ScaleType.Crop,
+        Visible = false,
+        BorderSizePixel = 0,
+    }, frame)
+    local scrim = new("Frame", {
+        Size = UDim2.fromScale(1, 1),
+        BackgroundColor3 = T.black,
+        BorderSizePixel = 0,
+        Visible = false,
+        ZIndex = 2,
+    }, frame)
+    local scrimGrad = new("UIGradient", { Rotation = 90 }, scrim)
+    local txt = label(frame, {
+        Position = UDim2.fromOffset(12, 0),
+        Size = UDim2.fromOffset(W2 - 24, 60),
+        Text = text,
+        Font = Enum.Font.GothamBold,
+        TextSize = textSize,
+        TextWrapped = true,
+        ZIndex = 3,
+    })
+    local loaded = false
+    local imgToken = 0
+    local function imgSize()
+        local ok, sz = pcall(function()
+            return img.ContentImageSize
+        end)
+        if ok then
+            return sz
+        end
+        return Vector2.new(2, 1)
+    end
+    local function apply()
+        local h
+        if loaded then
+            local sz = imgSize()
+            local ratio = (sz.X > 0) and (sz.Y / sz.X) or 0.5
+            h = o.Height or math.clamp(math.floor(W2 * ratio), 80, 220)
+            img.Visible = true
+            scrim.Visible = text ~= ""
+            if textPos == "Top" then
+                scrimGrad.Transparency = NumberSequence.new(0.25, 1)
+                txt.TextYAlignment = Enum.TextYAlignment.Top
+                txt.TextXAlignment = Enum.TextXAlignment.Left
+            elseif textPos == "Center" then
+                scrimGrad.Transparency = NumberSequence.new(0.55, 0.55)
+                txt.TextYAlignment = Enum.TextYAlignment.Center
+                txt.TextXAlignment = Enum.TextXAlignment.Center
+            else
+                scrimGrad.Transparency = NumberSequence.new(1, 0.25)
+                txt.TextYAlignment = Enum.TextYAlignment.Bottom
+                txt.TextXAlignment = Enum.TextXAlignment.Left
+            end
+            txt.Position = UDim2.fromOffset(12, 8)
+            txt.Size = UDim2.fromOffset(W2 - 24, h - 16)
+            setc(txt, "TextColor3", T.white)
+            txt.TextStrokeTransparency = 0.7
+        else
+            local th = 0
+            if text ~= "" then
+                th = math.ceil(TextService:GetTextSize(text, textSize, Enum.Font.GothamBold, Vector2.new(W2 - 24, 10000)).Y)
+            end
+            h = math.max(40, th + 22)
+            img.Visible = false
+            scrim.Visible = false
+            txt.Position = UDim2.fromOffset(12, 0)
+            txt.Size = UDim2.fromOffset(W2 - 24, h)
+            txt.TextYAlignment = Enum.TextYAlignment.Center
+            txt.TextXAlignment = Enum.TextXAlignment.Left
+            setc(txt, "TextColor3", T.text)
+            txt.TextStrokeTransparency = 1
+        end
+        tw(frame, { Size = UDim2.fromOffset(W2, h) }, 0.3)
+        c.h = h
+        layoutBody(true)
+    end
+    local function setImage(src)
+        imgToken += 1
+        local my = imgToken
+        loaded = false
+        if src == nil or src == "" then
+            apply()
+            return
+        end
+        loadImageSource(src, function(url)
+            if my ~= imgToken or not img.Parent then
+                return
+            end
+            if not url then
+                apply()
+                return
+            end
+            img.Image = url
+            task.spawn(function()
+                local t = 0
+                while my == imgToken and img.Parent and t < 10 do
+                    local sz = imgSize()
+                    if sz.X > 0 and sz.Y > 0 then
+                        loaded = true
+                        apply()
+                        return
+                    end
+                    t += 0.1
+                    task.wait(0.1)
+                end
+                if my == imgToken then
+                    apply()
+                end
+            end)
+        end)
+    end
+    apply()
+    setImage(o.Image)
+    return {
+        SetImage = function(_, src)
+            setImage(src)
+        end,
+        SetText = function(_, t)
+            text = tostring(t or "")
+            txt.Text = text
+            apply()
+        end,
+    }
+end
 
 	function g:AddThemePicker(o)
 		o = o or {}
@@ -3234,114 +3248,3 @@ function UI:CreateWindow(cfg)
 end
 
 return UI
-"
-local IMAGE = ""
-
-assert(LIBRARY_URL ~= "", "请先在 LIBRARY_URL 中填入 UI 库的 Raw 链接")
-
-local UI = loadstring(game:HttpGet(LIBRARY_URL))()
-
-local Window = UI:CreateWindow({
-	Title = "示例窗口",
-	Subtitle = "Demo",
-	Watermark = "UI Library",
-})
-
-local Page = Window:AddPage({ Name = "控件", Icon = "layout-grid" })
-
-Page:AddMainButton({
-	Name = "主按钮",
-	Callback = function()
-		print("主按钮被点击")
-	end,
-})
-
-local Basic = Page:AddGroup({
-	Name = "基础控件",
-	Description = "点击展开",
-	Toggle = true,
-	Callback = function(on)
-		print("总开关", on)
-	end,
-})
-
-Basic:AddToggle({
-	Name = "开关",
-	Callback = function(on)
-		print("开关", on)
-	end,
-})
-
-local slider = Basic:AddSlider({
-	Name = "滑块",
-	Min = 0,
-	Max = 100,
-	Default = 50,
-	Callback = function(value)
-		print("滑块", value)
-	end,
-})
-
-Basic:AddDropdown({
-	Name = "下拉",
-	Options = { "A", "B", "C" },
-	Callback = function(value)
-		print("下拉", value)
-	end,
-})
-
-Basic:AddMultiDropdown({
-	Name = "多选",
-	Options = { "A", "B", "C" },
-	Default = { "A" },
-	Callback = function(list)
-		print("多选", table.concat(list, ","))
-	end,
-})
-
-Basic:AddColorPicker({
-	Name = "取色器",
-	Default = Color3.fromRGB(255, 120, 80),
-	Callback = function(color)
-		print("颜色", color)
-	end,
-})
-
-Basic:AddKeybind({
-	Name = "按键",
-	Default = Enum.KeyCode.E,
-	OnPress = function()
-		print("按下按键")
-	end,
-})
-
-Basic:AddButton({
-	Name = "按钮",
-	Callback = function()
-		print("按钮被点击")
-	end,
-})
-
-Basic:AddTextBox({
-	Name = "输入框",
-	Placeholder = "输入文字",
-	Callback = function(text)
-		print("输入", text)
-	end,
-})
-
-Basic:AddButton({
-	Name = "读取滑块的值",
-	Callback = function()
-		print("滑块当前值", slider:Get())
-	end,
-})
-
-local Show = Page:AddGroup({ Name = "展示与主题", Description = "图片 / 文字 / 主题" })
-
-Show:AddImage({
-	Image = IMAGE,
-	Text = "图片与文字展示",
-})
-
-Show:AddThemePicker({ Name = "主题" })
