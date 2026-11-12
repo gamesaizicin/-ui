@@ -800,9 +800,9 @@ local function newGroup(W, page, opts)
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
 	}, slot)
-	round(card, 12)
+	round(card, 14)
 	g.card = card
-	local cs = stroke(card, T.edge, hidden and 1 or 0.86, 1)
+	local cs = stroke(card, T.edge, hidden and 1 or 0.9, 1)
 
 	local glow = new("Frame", {
 		Size = UDim2.fromScale(1, 1),
@@ -810,16 +810,16 @@ local function newGroup(W, page, opts)
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 	}, card)
-	round(glow, 12)
+	round(glow, 14)
 
 	if not hidden then
 		local sheen = new("Frame", {
 			Size = UDim2.fromScale(1, 1),
 			BackgroundColor3 = T.white,
-			BackgroundTransparency = 1,
+			BackgroundTransparency = 0,
 			BorderSizePixel = 0,
 		}, card)
-		round(sheen, 12)
+		round(sheen, 14)
 		new("UIGradient", {
 			Rotation = 90,
 			Transparency = NumberSequence.new({
@@ -852,9 +852,9 @@ local function newGroup(W, page, opts)
 		if desc ~= "" then
 			label(card, {
 				Position = UDim2.fromOffset(18, 51),
-				Size = UDim2.fromOffset(textW, 20),
+				Size = UDim2.fromOffset(textW, 22),
 				Text = desc,
-				TextSize = 15,
+				TextSize = 16,
 				TextColor3 = T.sub,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			})
@@ -915,7 +915,7 @@ local function newGroup(W, page, opts)
 			Position = UDim2.fromOffset(16, headH),
 			Size = UDim2.fromOffset(CARD_W - 32, 1),
 			BackgroundColor3 = T.white,
-			BackgroundTransparency = 0.9,
+			BackgroundTransparency = 0.94,
 			BorderSizePixel = 0,
 			Visible = false,
 		}, card)
@@ -938,7 +938,7 @@ local function newGroup(W, page, opts)
 	local function layoutBody(animate)
 		local y = 0
 		for _, c in ipairs(g.controls) do
-			local pos = UDim2.fromOffset(13, y - 2)
+			local pos = UDim2.fromOffset(15, y - 2)
 			local size = UDim2.fromOffset(CARD_W - 26, c.h + 4)
 			if animate then
 				tw(c.row, { Position = pos, Size = size }, 0.32)
@@ -1218,7 +1218,7 @@ local function newGroup(W, page, opts)
 			Text = "",
 			BorderSizePixel = 0,
 		}, row)
-		round(head, 7)
+		round(head, 8)
 		stroke(head, T.white, 0.9)
 		label(head, {
 			Position = UDim2.fromOffset(12, 0),
@@ -1282,7 +1282,7 @@ local function newGroup(W, page, opts)
 				TextColor3 = (v == selected) and T.accent2 or T.text,
 				BorderSizePixel = 0,
 			}, listFrame)
-			round(b, 7)
+			round(b, 8)
 			items[i] = b
 			b.MouseEnter:Connect(function()
 				tw(b, { BackgroundTransparency = 0.75 }, 0.15)
@@ -1361,7 +1361,7 @@ local function newGroup(W, page, opts)
 			Text = "",
 			BorderSizePixel = 0,
 		}, row)
-		round(head, 7)
+		round(head, 8)
 		stroke(head, T.white, 0.92)
 		label(head, {
 			Position = UDim2.fromOffset(12, 0),
@@ -1451,7 +1451,7 @@ local function newGroup(W, page, opts)
 				Text = "",
 				BorderSizePixel = 0,
 			}, listFrame)
-			round(b, 7)
+			round(b, 8)
 			local box = new("Frame", {
 				Position = UDim2.fromOffset(10, 6),
 				Size = UDim2.fromOffset(20, 20),
@@ -1719,7 +1719,7 @@ local function newGroup(W, page, opts)
 			TextColor3 = T.accent2,
 			BorderSizePixel = 0,
 		}, row)
-		round(btn, 6)
+		round(btn, 8)
 		stroke(btn, T.white, 0.9)
 		local function setKey(code, fire)
 			entry.key = code
@@ -1778,10 +1778,10 @@ local function newGroup(W, page, opts)
 		})
 		if desc ~= "" then
 			label(row, {
-				Position = UDim2.fromOffset(0, 24),
-				Size = UDim2.fromOffset(W2 - 100, 18),
+				Position = UDim2.fromOffset(0, 23),
+				Size = UDim2.fromOffset(W2 - 100, 20),
 				Text = desc,
-				TextSize = 14,
+				TextSize = 15,
 				TextColor3 = T.dim,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			})
@@ -1799,23 +1799,27 @@ local function newGroup(W, page, opts)
 			TextTruncate = Enum.TextTruncate.AtEnd,
 			BorderSizePixel = 0,
 		}, row)
-		round(b, 7)
+		round(b, 8)
 		local bs = stroke(b, T.white, 0.88)
+		local hovering = false
+		local function rest()
+			local on = hovering
+			tw(b, { BackgroundColor3 = on and T.accent or T.off }, 0.18)
+			tw(bs, { Transparency = on and 0.5 or 0.88 }, 0.18)
+			tw(b, { TextColor3 = on and T.white or T.text }, 0.18)
+		end
 		b.MouseEnter:Connect(function()
-			tw(b, { BackgroundColor3 = T.accent }, 0.16)
-			tw(bs, { Transparency = 0.5 }, 0.16)
-			tw(b, { TextColor3 = T.white }, 0.16)
+			local lt = UserInputService:GetLastInputType()
+			hovering = lt == Enum.UserInputType.MouseMovement or lt == Enum.UserInputType.MouseButton1
+			rest()
 		end)
 		b.MouseLeave:Connect(function()
-			tw(b, { BackgroundColor3 = T.off }, 0.18)
-			tw(bs, { Transparency = 0.88 }, 0.18)
-			tw(b, { TextColor3 = T.text }, 0.18)
+			hovering = false
+			rest()
 		end)
 		local function fire()
-			tw(b, { BackgroundColor3 = T.accent2 }, 0.06)
-			task.delay(0.08, function()
-				tw(b, { BackgroundColor3 = T.accent }, 0.2)
-			end)
+			tw(b, { BackgroundColor3 = T.accent2 }, 0.05)
+			task.delay(0.1, rest)
 			if o.Callback then
 				task.spawn(o.Callback)
 			end
@@ -1849,7 +1853,7 @@ local function newGroup(W, page, opts)
 			BackgroundTransparency = 0.3,
 			BorderSizePixel = 0,
 		}, row)
-		round(field, 7)
+		round(field, 8)
 		local fs = stroke(field, T.white, 0.92)
 		local key = ctlKey(o.Flag or o.Name or "TextBox")
 		local value = o.Default or ""
@@ -2119,7 +2123,7 @@ local function newGroup(W, page, opts)
 				Text = "",
 				BorderSizePixel = 0,
 			}, row)
-			round(b, 7)
+			round(b, 8)
 			local st = stroke(b, T.white, 0.9)
 			local dotColors = { th.p.bg, th.p.card, th.p.accent }
 			for d, col in ipairs(dotColors) do
@@ -2397,7 +2401,7 @@ function Window:_reflow()
 		ui.navScroll.Size = UDim2.fromOffset(190, math.max(80, navH))
 	end
 	if ui.profilePlate then
-		ui.profilePlate.Position = UDim2.fromOffset(10, h - 80)
+		ui.profilePlate.Position = UDim2.fromOffset(10, h - 92)
 	end
 	ui.content.Position = UDim2.fromOffset(232, 0)
 	ui.content.Size = UDim2.fromOffset(w - 232, h)
@@ -2872,17 +2876,17 @@ local function buildShell(W)
 		Visible = false,
 		Active = true,
 	}, ui.shell)
-	round(ui.main, 18)
-	stroke(ui.main, T.edge, 0.8, 1)
+	round(ui.main, 20)
+	stroke(ui.main, T.edge, 0.84, 1)
 	ui.scale = new("UIScale", { Scale = 1 }, ui.main)
 	W.baseScale = W:_computeScale()
 	local sheen = new("Frame", {
 		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = T.white,
-		BackgroundTransparency = 1,
+		BackgroundTransparency = 0,
 		BorderSizePixel = 0,
 	}, ui.main)
-	round(sheen, 18)
+	round(sheen, 20)
 	new("UIGradient", {
 		Rotation = 90,
 		Transparency = NumberSequence.new({
@@ -2981,7 +2985,21 @@ local function buildSidebar(W)
 		BackgroundTransparency = W:_t("side"),
 		BorderSizePixel = 0,
 	}, ui.main)
-	round(sidebar, 14)
+	round(sidebar, 16)
+	local sidebarSheen = new("Frame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = T.white,
+		BackgroundTransparency = 0,
+		BorderSizePixel = 0,
+	}, sidebar)
+	round(sidebarSheen, 16)
+	new("UIGradient", {
+		Rotation = 90,
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.972),
+			NumberSequenceKeypoint.new(1, 1),
+		}),
+	}, sidebarSheen)
 	ui.sidebar = sidebar
 
 	local brandSpec = c.WindowIcon
@@ -2991,7 +3009,7 @@ local function buildSidebar(W)
 	local brandSize = c.WindowIconSize or 26
 	local brandBox, setBrandIcon = makeIconSlot(sidebar, brandSpec, brandSize, T.white, {
 		Position = UDim2.fromOffset(16, 16),
-	}, c.Icon)
+	}, "terminal")
 	ui.logo = brandBox
 	ui.brandIcon = brandBox
 	ui.setBrandIcon = setBrandIcon
@@ -3007,7 +3025,7 @@ local function buildSidebar(W)
 		Position = UDim2.fromOffset(58, 33),
 		Size = UDim2.fromOffset(136, 16),
 		Text = c.Subtitle,
-		TextSize = 12,
+		TextSize = 13,
 		TextColor3 = T.sub,
 		TextTruncate = Enum.TextTruncate.AtEnd,
 	})
@@ -3093,15 +3111,15 @@ local function buildSidebar(W)
 
 	if c.ShowProfile then
 		local plate = new("Frame", {
-			Position = UDim2.fromOffset(10, 470),
+			Position = UDim2.fromOffset(10, 468),
 			Size = UDim2.fromOffset(190, 60),
 			BackgroundColor3 = T.card2,
 			BackgroundTransparency = 0.5,
 			BorderSizePixel = 0,
 		}, sidebar)
 		ui.profilePlate = plate
-		round(plate, 10)
-		stroke(plate, T.white, 0.92)
+		round(plate, 12)
+		stroke(plate, T.white, 0.94)
 		local avatar = new("ImageLabel", {
 			Position = UDim2.fromOffset(10, 10),
 			Size = UDim2.fromOffset(40, 40),
@@ -3226,7 +3244,7 @@ local function buildContent(W)
 		Position = UDim2.fromOffset(0, 66),
 		Size = UDim2.fromOffset(696, 1),
 		BackgroundColor3 = T.white,
-		BackgroundTransparency = 0.92,
+		BackgroundTransparency = 0.94,
 		BorderSizePixel = 0,
 	}, content)
 
@@ -3280,7 +3298,7 @@ local function buildConfirm(W)
 	local sheen = new("Frame", {
 		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = T.white,
-		BackgroundTransparency = 1,
+		BackgroundTransparency = 0,
 		BorderSizePixel = 0,
 		ZIndex = 122,
 	}, panel)
@@ -3313,7 +3331,7 @@ local function buildConfirm(W)
 		BorderSizePixel = 0,
 		ZIndex = 123,
 	}, panel)
-	round(yes, 9)
+	round(yes, 10)
 	local no = new("TextButton", {
 		Position = UDim2.fromOffset(170, 98),
 		Size = UDim2.fromOffset(126, 38),
@@ -3327,7 +3345,7 @@ local function buildConfirm(W)
 		BorderSizePixel = 0,
 		ZIndex = 123,
 	}, panel)
-	round(no, 9)
+	round(no, 10)
 	stroke(no, T.white, 0.88)
 	W:Connect(yes.MouseEnter, function()
 		tw(yes, { BackgroundColor3 = T.accent2 }, 0.16)
@@ -3407,11 +3425,8 @@ local function buildIsland(W)
 	end
 
 	local segs = {}
-	local islandSpec = c.IslandIcon
-	if islandSpec == nil then
-		islandSpec = c.Icon
-	end
-	local titleIcon, setIslandIcon = makeIconSlot(island, islandSpec, c.IslandIconSize or 14, T.accent2, { ZIndex = 51 }, c.Icon)
+	local islandSpec = c.IslandIcon or "terminal"
+	local titleIcon, setIslandIcon = makeIconSlot(island, islandSpec, c.IslandIconSize or 14, T.accent2, { ZIndex = 51 }, "terminal")
 	ui.islandIcon = titleIcon
 	ui.setIslandIcon = setIslandIcon
 	ui.islandTitleLabel = mkLabel(W.islandTitle, true)
@@ -3533,12 +3548,12 @@ function UI:CreateWindow(cfg)
 		Icon = "terminal",
 		WindowIcon = nil,
 		WindowIconSize = 26,
-		IslandIcon = nil,
+		IslandIcon = "terminal",
 		IslandIconSize = 14,
 		ThemePreset = "graphite",
 		ThemeName = "自定义",
 		Transparent = true,
-		BackgroundTransparency = 0.4,
+		BackgroundTransparency = 0.36,
 		Blur = true,
 		BlurSize = 14,
 		Watermark = false,
