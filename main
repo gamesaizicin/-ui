@@ -538,13 +538,28 @@ end
 
 local function isImageSource(src)
 	if type(src) == "number" then
-		return true
+		return src > 0
 	end
-	local s = tostring(src or "")
+	local s = (tostring(src or ""):gsub("^%s+", ""):gsub("%s+$", ""))
 	return s:match("^%d+$") ~= nil
-		or s:match("^rbx") ~= nil
+		or s:match("^rbxassetid://%d+") ~= nil
+		or s:match("^rbxasset://") ~= nil
+		or s:match("^rbxthumb://") ~= nil
 		or s:match("^https?://") ~= nil
 		or s:match("[%?&]id=%d+") ~= nil
+end
+
+local function readList(src)
+	if type(src) == "table" then
+		return src
+	end
+	if type(src) == "function" then
+		local ok, res = pcall(src)
+		if ok and type(res) == "table" then
+			return res
+		end
+	end
+	return nil
 end
 
 local function makeIconSlot(parent, spec, defSize, defColor, props, defFallback)
@@ -584,9 +599,9 @@ local function makeIconSlot(parent, spec, defSize, defColor, props, defFallback)
 		box.Size = UDim2.fromOffset(size, size)
 		clear()
 		local fb = o.Fallback or defFallback or "terminal"
-		if src == nil or src == "" or not isImageSource(src) then
-			local name = src
-			if name == nil or name == "" or isImageSource(name) then
+		if src == nil or not isImageSource(src) then
+			local name = (tostring(src or ""):gsub("^%s+", ""):gsub("%s+$", ""):lower():gsub("^lucide[:%s]*", ""))
+			if name == "" then
 				name = fb
 			end
 			makeIcon(box, name, size, color, { Size = UDim2.fromOffset(size, size) })
@@ -602,7 +617,7 @@ local function makeIconSlot(parent, spec, defSize, defColor, props, defFallback)
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			ScaleType = o.Stretch and Enum.ScaleType.Stretch or (o.Fit == false and Enum.ScaleType.Crop or Enum.ScaleType.Fit),
-			ImageTransparency = 1,
+			ImageTransparency = o.Transparency or 0,
 			ImageColor3 = o.Tint or Color3.new(1, 1, 1),
 			ZIndex = 2,
 		}, box)
@@ -621,34 +636,30 @@ local function makeIconSlot(parent, spec, defSize, defColor, props, defFallback)
 			if not img.Parent or not url then
 				return
 			end
-			local okSet = pcall(function()
-				img.Image = url
-			end)
-			if not okSet then
-				return
+			img.Image = url
+			local function shown()
+				if fallback and fallback.Parent then
+					fallback.Visible = false
+				end
 			end
-			task.spawn(function()
-				local t = 0
-				while img.Parent and t < 10 do
-					local ok, sz = pcall(function()
-						return img.ContentImageSize
-					end)
-					local done = ok and typeof(sz) == "Vector2" and sz.X > 0 and sz.Y > 0
-					if not done then
-						local okL, loaded = pcall(function()
-							return img.IsLoaded
-						end)
-						done = okL and loaded == true
-					end
-					if done then
-						if fallback and fallback.Parent then
-							fallback.Visible = false
-						end
-						tw(img, { ImageTransparency = o.Transparency or 0 }, 0.25)
-						return
-					end
-					t += 0.1
-					task.wait(0.1)
+			local function loaded()
+				if not img.Parent then
+					return false
+				end
+				local sz = img.ContentImageSize
+				return (typeof(sz) == "Vector2" and sz.X > 0 and sz.Y > 0) or img.IsLoaded == true
+			end
+			if loaded() then
+				shown()
+			end
+			img:GetPropertyChangedSignal("ContentImageSize"):Connect(function()
+				if loaded() then
+					shown()
+				end
+			end)
+			img:GetPropertyChangedSignal("IsLoaded"):Connect(function()
+				if loaded() then
+					shown()
 				end
 			end)
 		end)
@@ -1192,8 +1203,16 @@ local function newGroup(W, page, opts)
 
 	function g:AddDropdown(o)
 		o = o or {}
-		local options = o.Options or {}
 		local W2 = CARD_W - 32
+		local source = o.GetOptions or (type(o.Options) == "function" and o.Options or nil)
+		local tracked = o.GetOptions or (type(o.Options) == "table" and o.Options or source)
+		local options = {}
+		local initialList = readList(o.Options) or readList(o.GetOptions)
+		if initialList then
+			for i, v in ipairs(initialList) do
+				options[i] = v
+			end
+		end
 		local row = newRow()
 		local c = addControl(row, 44)
 		local key = ctlKey(o.Flag or o.Name or "Dropdown")
@@ -1230,7 +1249,7 @@ local function newGroup(W, page, opts)
 		local valueLbl = label(head, {
 			Position = UDim2.fromOffset(W2 - 170, 0),
 			Size = UDim2.fromOffset(136, 44),
-			Text = tostring(selected),
+			Text = selected ~= nil and tostring(selected) or W.S.None,
 			TextXAlignment = Enum.TextXAlignment.Right,
 			TextSize = 15,
 			Font = Enum.Font.GothamBold,
@@ -1249,18 +1268,24 @@ local function newGroup(W, page, opts)
 		local open = false
 		local items = {}
 		local function close()
+			if not open then
+				return
+			end
 			open = false
 			c.h = 44
 			tw(arrow, { Rotation = 0 }, 0.3)
 			layoutBody(true)
 		end
+		local function paintItems()
+			for i, ob in ipairs(items) do
+				setc(ob, "TextColor3", (options[i] == selected) and T.accent2 or T.text)
+			end
+			valueLbl.Text = selected ~= nil and tostring(selected) or W.S.None
+		end
 		local function choose(v, fire)
 			selected = v
-			valueLbl.Text = tostring(v)
-			for j, ob in ipairs(items) do
-				setc(ob, "TextColor3", (options[j] == selected) and T.accent2 or T.text)
-			end
 			setFlag(o.Flag, v)
+			paintItems()
 			if fire then
 				saveCtl(key, v)
 				if o.Callback then
@@ -1268,7 +1293,7 @@ local function newGroup(W, page, opts)
 				end
 			end
 		end
-		for i, v in ipairs(options) do
+		local function makeItem(v, i)
 			local b = new("TextButton", {
 				Position = UDim2.fromOffset(0, (i - 1) * 34),
 				Size = UDim2.fromOffset(W2, 32),
@@ -1295,6 +1320,9 @@ local function newGroup(W, page, opts)
 				close()
 			end)
 		end
+		for i, v in ipairs(options) do
+			makeItem(v, i)
+		end
 		head.MouseButton1Click:Connect(function()
 			if open then
 				close()
@@ -1305,24 +1333,99 @@ local function newGroup(W, page, opts)
 			tw(arrow, { Rotation = 180 }, 0.3)
 			layoutBody(true)
 		end)
+		local function sync()
+			local listed = readList(tracked)
+			if not listed then
+				return
+			end
+			local changed = #listed ~= #options
+			if not changed then
+				for i = 1, #listed do
+					if listed[i] ~= options[i] then
+						changed = true
+						break
+					end
+				end
+			end
+			if not changed then
+				return
+			end
+			options = {}
+			for i, v in ipairs(listed) do
+				options[i] = v
+			end
+			for _, it in ipairs(items) do
+				it:Destroy()
+			end
+			items = {}
+			for i, v in ipairs(options) do
+				makeItem(v, i)
+			end
+			local found = false
+			for _, v in ipairs(options) do
+				if v == selected then
+					found = true
+				end
+			end
+			if not found then
+				selected = nil
+				setFlag(o.Flag, nil)
+				saveCtl(key, nil)
+			end
+			paintItems()
+			listFrame.Size = UDim2.fromOffset(W2, #options * 34)
+			if open then
+				c.h = 50 + #options * 34
+				layoutBody(true)
+			end
+		end
+		if type(tracked) == "function" or o.AutoRefresh == true then
+			local waitTime = tonumber(o.RefreshInterval) or 2
+			if waitTime > 0 then
+				task.spawn(function()
+					while row.Parent and not W.destroyed do
+						task.wait(waitTime)
+						if not row.Parent or W.destroyed then
+							break
+						end
+						sync()
+					end
+				end)
+			end
+		end
 		return {
 			Get = function()
 				return selected
 			end,
 			Set = function(_, v, silent)
+				if v == nil then
+					choose(nil, not silent)
+					return
+				end
 				for _, ov in ipairs(options) do
 					if ov == v then
 						choose(v, not silent)
+						return
 					end
 				end
 			end,
+			Refresh = function()
+				sync()
+			end,
 		}
 	end
-
 	function g:AddMultiDropdown(o)
 		o = o or {}
-		local options = o.Options or {}
 		local W2 = CARD_W - 32
+		local source = o.GetOptions or (type(o.Options) == "function" and o.Options or nil)
+		local tracked = o.GetOptions or (type(o.Options) == "table" and o.Options or source)
+		local options = {}
+		local initialList = readList(o.Options) or readList(o.GetOptions)
+		if initialList then
+			for i, v in ipairs(initialList) do
+				options[i] = v
+			end
+		end
 		local key = ctlKey(o.Flag or o.Name or "MultiDropdown")
 		local row = newRow()
 		local c = addControl(row, 44)
@@ -1424,6 +1527,9 @@ local function newGroup(W, page, opts)
 		local items = {}
 		local function paintItem(i, on)
 			local it = items[i]
+			if not it then
+				return
+			end
 			tw(it.box, { BackgroundColor3 = on and T.selected or T.off }, 0.2)
 			tw(it.stroke, { Transparency = on and 1 or 0.8 }, 0.2)
 			fadeIcon(it.tick, on and 0 or 1)
@@ -1440,7 +1546,7 @@ local function newGroup(W, page, opts)
 				end
 			end
 		end
-		for i, v in ipairs(options) do
+		local function makeItem(v, i)
 			local on = selected[v] == true
 			local b = new("TextButton", {
 				Position = UDim2.fromOffset(0, (i - 1) * 34),
@@ -1476,7 +1582,7 @@ local function newGroup(W, page, opts)
 				TextSize = 15,
 				TextColor3 = on and T.text or T.dim,
 			})
-			items[i] = { box = box, stroke = boxStroke, tick = tick, name = nameLbl }
+			items[i] = { box = box, stroke = boxStroke, tick = tick, name = nameLbl, btn = b }
 			b.MouseEnter:Connect(function()
 				tw(b, { BackgroundTransparency = 0.93 }, 0.15)
 			end)
@@ -1488,6 +1594,9 @@ local function newGroup(W, page, opts)
 				paintItem(i, selected[v] == true)
 				commit(true)
 			end)
+		end
+		for i, v in ipairs(options) do
+			makeItem(v, i)
 		end
 		head.MouseButton1Click:Connect(function()
 			open = not open
@@ -1508,6 +1617,67 @@ local function newGroup(W, page, opts)
 		if restored and o.Callback then
 			task.defer(o.Callback, collect())
 		end
+		local function sync()
+			local listed = readList(tracked)
+			if not listed then
+				return
+			end
+			local changed = #listed ~= #options
+			if not changed then
+				for i = 1, #listed do
+					if listed[i] ~= options[i] then
+						changed = true
+						break
+					end
+				end
+			end
+			if not changed then
+				return
+			end
+			options = {}
+			for i, v in ipairs(listed) do
+				options[i] = v
+			end
+			valid = {}
+			for _, v in ipairs(options) do
+				valid[v] = true
+			end
+			for k in pairs(selected) do
+				if not valid[k] then
+					selected[k] = nil
+				end
+			end
+			for _, it in ipairs(items) do
+				it.btn:Destroy()
+			end
+			items = {}
+			for i, v in ipairs(options) do
+				makeItem(v, i)
+			end
+			refreshSummary(true)
+			local l = collect()
+			setFlag(o.Flag, l)
+			saveCtl(key, l)
+			listFrame.Size = UDim2.fromOffset(W2, #options * 34)
+			if open then
+				c.h = 50 + #options * 34
+				layoutBody(true)
+			end
+		end
+		if type(tracked) == "function" or o.AutoRefresh == true then
+			local waitTime = tonumber(o.RefreshInterval) or 2
+			if waitTime > 0 then
+				task.spawn(function()
+					while row.Parent and not W.destroyed do
+						task.wait(waitTime)
+						if not row.Parent or W.destroyed then
+							break
+						end
+						sync()
+					end
+				end)
+			end
+		end
 		return {
 			Get = function()
 				return collect()
@@ -1524,9 +1694,11 @@ local function newGroup(W, page, opts)
 				end
 				commit(not silent)
 			end,
+			Refresh = function()
+				sync()
+			end,
 		}
 	end
-
 	function g:AddColorPicker(o)
 		o = o or {}
 		local W2 = CARD_W - 32
@@ -1802,31 +1974,87 @@ local function newGroup(W, page, opts)
 		round(b, 8)
 		local bs = stroke(b, T.white, 0.88)
 		local hovering = false
-		local function rest()
-			local on = hovering
-			tw(b, { BackgroundColor3 = on and T.accent or T.off }, 0.18)
-			tw(bs, { Transparency = on and 0.5 or 0.88 }, 0.18)
-			tw(b, { TextColor3 = on and T.white or T.text }, 0.18)
+		local pressing = false
+		local flash = false
+		local pressId = 0
+		local expired = false
+		local function paint(dur)
+			local active = pressing or flash
+			local bg = T.off
+			local tc = T.text
+			local sc = T.white
+			local st = 0.88
+			if active then
+				bg = T.accent
+				tc = T.white
+				sc = T.accent2
+				st = 0.35
+			elseif hovering then
+				tc = T.accent2
+				sc = T.accent2
+				st = 0.55
+			end
+			tw(b, { BackgroundColor3 = bg, TextColor3 = tc }, dur or 0.16)
+			tw(bs, { Color = sc, Transparency = st }, dur or 0.16)
 		end
 		b.MouseEnter:Connect(function()
-			local lt = UserInputService:GetLastInputType()
-			hovering = lt == Enum.UserInputType.MouseMovement or lt == Enum.UserInputType.MouseButton1
-			rest()
+			hovering = UserInputService:GetLastInputType() ~= Enum.UserInputType.Touch
+			paint(0.18)
 		end)
 		b.MouseLeave:Connect(function()
 			hovering = false
-			rest()
+			paint(0.18)
+		end)
+		b.InputBegan:Connect(function(i)
+			if not isPress(i) then
+				return
+			end
+			pressId += 1
+			local id = pressId
+			pressing = true
+			expired = false
+			paint(0.07)
+			task.delay(0.18, function()
+				if id ~= pressId then
+					return
+				end
+				expired = true
+				if not pressing then
+					paint(0.2)
+				end
+			end)
+		end)
+		b.InputEnded:Connect(function(i)
+			if not isPress(i) or not pressing then
+				return
+			end
+			pressing = false
+			if expired then
+				paint(0.18)
+			end
 		end)
 		local function fire()
-			tw(b, { BackgroundColor3 = T.accent2 }, 0.05)
-			task.delay(0.1, rest)
 			if o.Callback then
 				task.spawn(o.Callback)
 			end
 		end
+		local function pulse()
+			pressId += 1
+			local id = pressId
+			flash = true
+			paint(0.06)
+			task.delay(0.18, function()
+				if id ~= pressId then
+					return
+				end
+				flash = false
+				paint(0.22)
+			end)
+		end
 		b.MouseButton1Click:Connect(fire)
 		return {
 			Fire = function()
+				pulse()
 				fire()
 			end,
 			SetText = function(_, t)
