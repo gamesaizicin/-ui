@@ -55,6 +55,10 @@ local Themes = {
 	{ id = "rose", name = "绯红", p = pal({ { 24, 16, 19 }, { 35, 24, 28 }, { 54, 37, 43 }, { 33, 22, 26 }, { 130, 96, 106 }, { 164, 70, 92 }, { 226, 140, 156 }, { 242, 232, 235 }, { 160, 134, 142 }, { 72, 52, 58 }, { 194, 170, 178 }, { 214, 194, 200 }, { 226, 204, 210 }, { 30, 20, 24 } }) },
 	{ id = "mono", name = "炭黑", p = pal({ { 14, 14, 15 }, { 23, 23, 25 }, { 37, 37, 40 }, { 22, 22, 24 }, { 104, 104, 110 }, { 96, 102, 116 }, { 184, 188, 198 }, { 236, 236, 238 }, { 140, 140, 146 }, { 52, 52, 56 }, { 174, 174, 180 }, { 200, 200, 204 }, { 206, 206, 212 }, { 20, 20, 22 } }) },
 	{ id = "indigo", name = "靛夜", p = pal({ { 13, 15, 28 }, { 20, 23, 42 }, { 31, 36, 64 }, { 18, 21, 38 }, { 88, 98, 148 }, { 66, 88, 190 }, { 130, 152, 236 }, { 228, 232, 246 }, { 128, 136, 170 }, { 44, 50, 82 }, { 164, 170, 200 }, { 188, 194, 222 }, { 190, 198, 230 }, { 17, 20, 36 } }) },
+	{ id = "violet", name = "罗兰", p = pal({ { 18, 16, 26 }, { 27, 24, 37 }, { 38, 34, 52 }, { 24, 21, 33 }, { 104, 96, 140 }, { 124, 88, 236 }, { 178, 150, 255 }, { 238, 235, 245 }, { 150, 143, 168 }, { 56, 50, 76 }, { 166, 158, 184 }, { 178, 172, 196 }, { 202, 196, 220 }, { 20, 18, 29 } }) },
+	{ id = "ocean", name = "幽蓝", p = pal({ { 12, 18, 27 }, { 19, 27, 39 }, { 29, 40, 57 }, { 16, 23, 34 }, { 80, 108, 140 }, { 38, 132, 200 }, { 120, 196, 240 }, { 230, 240, 248 }, { 130, 150, 170 }, { 44, 58, 78 }, { 160, 178, 196 }, { 176, 192, 208 }, { 190, 208, 224 }, { 14, 21, 31 } }) },
+	{ id = "ember", name = "熔岩", p = pal({ { 24, 17, 15 }, { 34, 25, 22 }, { 47, 34, 30 }, { 29, 20, 17 }, { 128, 94, 80 }, { 214, 108, 62 }, { 246, 178, 120 }, { 245, 236, 230 }, { 160, 140, 130 }, { 66, 50, 44 }, { 180, 162, 152 }, { 196, 180, 170 }, { 214, 196, 186 }, { 27, 19, 17 } }) },
+	{ id = "slate", name = "雾灰", p = pal({ { 20, 22, 25 }, { 29, 32, 37 }, { 41, 45, 52 }, { 25, 28, 33 }, { 100, 108, 122 }, { 96, 112, 132 }, { 176, 190, 210 }, { 238, 241, 245 }, { 146, 154, 166 }, { 54, 58, 66 }, { 168, 176, 186 }, { 178, 186, 196 }, { 196, 204, 214 }, { 23, 25, 29 } }) },
 }
 
 local themeById = {}
@@ -528,6 +532,128 @@ local function resolveImage(src, cb)
 	cb(url)
 end
 
+local function isImageSource(src)
+	if type(src) == "number" then
+		return true
+	end
+	local s = tostring(src or "")
+	return s:match("^%d+$") ~= nil
+		or s:match("^rbx") ~= nil
+		or s:match("^https?://") ~= nil
+		or s:match("[%?&]id=%d+") ~= nil
+end
+
+local function makeIconSlot(parent, spec, defSize, defColor, props, defFallback)
+	local box = new("Frame", {
+		Size = UDim2.fromOffset(defSize, defSize),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+	}, parent)
+	if props then
+		for k, v in pairs(props) do
+			box[k] = v
+		end
+	end
+
+	local function clear()
+		for _, ch in ipairs(box:GetChildren()) do
+			ch:Destroy()
+		end
+	end
+
+	local function apply(sp)
+		local o
+		if type(sp) == "table" then
+			o = sp
+		else
+			o = { Source = sp }
+		end
+		local size = o.Size or defSize
+		local color = o.Color or defColor
+		local src = o.Source
+		if src == nil then
+			src = o.Image
+		end
+		if src == nil then
+			src = o.Icon
+		end
+		box.Size = UDim2.fromOffset(size, size)
+		clear()
+		local fb = o.Fallback or defFallback or "terminal"
+		if src == nil or src == "" or not isImageSource(src) then
+			local name = src
+			if name == nil or name == "" or isImageSource(name) then
+				name = fb
+			end
+			makeIcon(box, name, size, color, { Size = UDim2.fromOffset(size, size) })
+			return
+		end
+		local fallback = makeIcon(box, fb, size, color, {
+			Size = UDim2.fromOffset(size, size),
+			ZIndex = 1,
+		})
+		fallback.BackgroundTransparency = 1
+		local img = new("ImageLabel", {
+			Size = UDim2.fromScale(1, 1),
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			ScaleType = o.Stretch and Enum.ScaleType.Stretch or (o.Fit == false and Enum.ScaleType.Crop or Enum.ScaleType.Fit),
+			ImageTransparency = 1,
+			ImageColor3 = o.Tint or Color3.new(1, 1, 1),
+			ZIndex = 2,
+		}, box)
+		local r = o.Rounded
+		if r == nil then
+			r = size * 0.26
+		elseif r == true then
+			r = size * 0.26
+		elseif r == false then
+			r = 0
+		end
+		if type(r) == "number" and r > 0 then
+			round(img, math.floor(r + 0.5))
+		end
+		resolveImage(src, function(url)
+			if not img.Parent or not url then
+				return
+			end
+			local okSet = pcall(function()
+				img.Image = url
+			end)
+			if not okSet then
+				return
+			end
+			task.spawn(function()
+				local t = 0
+				while img.Parent and t < 10 do
+					local ok, sz = pcall(function()
+						return img.ContentImageSize
+					end)
+					local done = ok and typeof(sz) == "Vector2" and sz.X > 0 and sz.Y > 0
+					if not done then
+						local okL, loaded = pcall(function()
+							return img.IsLoaded
+						end)
+						done = okL and loaded == true
+					end
+					if done then
+						if fallback and fallback.Parent then
+							fallback.Visible = false
+						end
+						tw(img, { ImageTransparency = o.Transparency or 0 }, 0.25)
+						return
+					end
+					t += 0.1
+					task.wait(0.1)
+				end
+			end)
+		end)
+	end
+
+	apply(spec)
+	return box, apply
+end
+
 local function buildSwitch(parent, w, h)
 	local track = new("TextButton", {
 		AutoButtonColor = false,
@@ -660,7 +786,7 @@ local function newGroup(W, page, opts)
 		Size = UDim2.fromOffset(CARD_W, headH + 4),
 		BackgroundTransparency = 1,
 		Visible = false,
-	}, ui.scroll)
+	}, ui.grid or ui.scroll)
 	g.slot = slot
 
 	local card = new("Frame", {
@@ -670,7 +796,7 @@ local function newGroup(W, page, opts)
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
 	}, slot)
-	round(card, 10)
+	round(card, 12)
 	g.card = card
 	local cs = stroke(card, T.edge, hidden and 1 or 0.86, 1)
 
@@ -680,7 +806,25 @@ local function newGroup(W, page, opts)
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 	}, card)
-	round(glow, 10)
+	round(glow, 12)
+
+	if not hidden then
+		local sheen = new("Frame", {
+			Size = UDim2.fromScale(1, 1),
+			BackgroundColor3 = T.white,
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+		}, card)
+		round(sheen, 12)
+		new("UIGradient", {
+			Rotation = 90,
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0.955),
+				NumberSequenceKeypoint.new(0.55, 0.99),
+				NumberSequenceKeypoint.new(1, 1),
+			}),
+		}, sheen)
+	end
 
 	local hit
 	local chevron, sep, textW
@@ -706,7 +850,7 @@ local function newGroup(W, page, opts)
 				Position = UDim2.fromOffset(18, 50),
 				Size = UDim2.fromOffset(textW, 18),
 				Text = desc,
-				TextSize = 13,
+				TextSize = 14,
 				TextColor3 = T.sub,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			})
@@ -1630,10 +1774,10 @@ local function newGroup(W, page, opts)
 		})
 		if desc ~= "" then
 			label(row, {
-				Position = UDim2.fromOffset(0, 21),
-				Size = UDim2.fromOffset(W2 - 96, 14),
+				Position = UDim2.fromOffset(0, 20),
+				Size = UDim2.fromOffset(W2 - 96, 16),
 				Text = desc,
-				TextSize = 12,
+				TextSize = 13,
 				TextColor3 = T.dim,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			})
@@ -1646,7 +1790,7 @@ local function newGroup(W, page, opts)
 			AutoButtonColor = false,
 			Text = tostring(caption),
 			Font = Enum.Font.GothamBold,
-			TextSize = 12,
+			TextSize = 13,
 			TextColor3 = T.text,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 			BorderSizePixel = 0,
@@ -1796,6 +1940,7 @@ local function newGroup(W, page, opts)
 			BorderSizePixel = 0,
 			ZIndex = 1,
 		}, frame)
+		round(img, 10)
 		local scrim = new("Frame", {
 			Size = UDim2.fromScale(1, 1),
 			BackgroundColor3 = T.black,
@@ -2045,7 +2190,7 @@ function Page:AddMainButton(opts)
 		Size = UDim2.fromOffset(CARD_W, 68),
 		BackgroundTransparency = 1,
 		Visible = false,
-	}, W.ui.scroll)
+	}, W.ui.grid or W.ui.scroll)
 	g.slot = slot
 	local card = new("TextButton", {
 		Size = UDim2.fromOffset(CARD_W, 64),
@@ -2218,17 +2363,21 @@ function Window:_layoutHandles(sc)
 	end
 end
 
-function Window:_columnCount()
+function Window:_gridMetrics()
 	local ui = self.ui
 	if not ui.scroll then
-		return 2, 4
+		return 1, 4
 	end
 	local sw = ui.scroll.Size.X.Offset
-	local cols = math.floor((sw - 8 + 12) / (CARD_W + 12))
-	cols = math.clamp(cols, 1, 4)
-	local total = cols * CARD_W + (cols - 1) * 12
-	local baseX = math.max(4, math.floor((sw - total) / 2))
-	return cols, baseX
+	if sw <= 0 then
+		sw = 692
+	end
+	local s = math.clamp((sw - 8) / (CARD_W * 2 + 12), 0.62, 1.3)
+	local baseX = math.floor((sw / s - CARD_W * 2 - 12) / 2)
+	if baseX < 4 then
+		baseX = 4
+	end
+	return s, baseX
 end
 
 function Window:_reflow()
@@ -2255,36 +2404,12 @@ function Window:_reflow()
 		ui.headerLine.Size = UDim2.fromOffset(w - 244, 1)
 	end
 	if ui.scroll then
-		ui.scroll.Size = UDim2.fromOffset(w - 248, h - 128)
-	end
-	if ui.footer then
-		ui.footer.Position = UDim2.fromOffset(0, h - 46)
-		ui.footer.Size = UDim2.fromOffset(w - 232, 46)
-	end
-	if ui.footerLine then
-		ui.footerLine.Size = UDim2.fromOffset(w - 244, 1)
-	end
-	if ui.footerRight then
-		ui.footerRight.Position = UDim2.new(1, -12, 0, 1)
+		ui.scroll.Size = UDim2.fromOffset(w - 248, h - 88)
 	end
 	self:_relayout(false, false)
 end
 
 function Window:_updateFooter()
-	local n = 0
-	for _, g in ipairs(self.groups) do
-		if g.enabled then
-			n += 1
-		end
-	end
-	if self.ui.footerLeft then
-		self.ui.footerLeft.Text = string.format(self.S.Enabled, n)
-	end
-end
-
-function Window:_placeCount()
-	local ui = self.ui
-	ui.countLabel.Position = UDim2.fromOffset(12 + ui.titleLabel.TextBounds.X + 12, 3)
 end
 
 function Window:_relayout(animate, enter, dur, style, dir)
@@ -2292,11 +2417,15 @@ function Window:_relayout(animate, enter, dur, style, dir)
 	if not ui.scroll then
 		return
 	end
-	local colY = {}
-	for i = 1, 4 do
-		colY[i] = 4
+	if not ui.grid then
+		return
 	end
-	local cols, baseX = self:_columnCount()
+	local scale, baseX = self:_gridMetrics()
+	if math.abs(ui.gridScale.Scale - scale) > 0.001 then
+		ui.gridScale.Scale = scale
+	end
+	local colY = { 4, 4 }
+	local cols = 2
 	for k, g in ipairs(self.ordered) do
 		local col = (k - 1) % cols
 		local pos = UDim2.fromOffset(baseX + col * (CARD_W + 12), colY[col + 1])
@@ -2316,7 +2445,8 @@ function Window:_relayout(animate, enter, dur, style, dir)
 	for i = 1, cols do
 		maxY = math.max(maxY, colY[i])
 	end
-	ui.scroll.CanvasSize = UDim2.fromOffset(0, maxY + 6)
+	ui.grid.Size = UDim2.fromOffset(CARD_W * 2 + 12, maxY)
+	ui.scroll.CanvasSize = UDim2.fromOffset(0, math.ceil((maxY + 8) * scale))
 end
 
 function Window:_reorder(moved)
@@ -2383,8 +2513,6 @@ function Window:_refresh(mode)
 		tw(ui.titleLabel, { TextTransparency = 0 }, 0.35)
 	end
 	ui.titleLabel.Text = q ~= "" and self.S.SearchResult or (self.current and self.current.name or "")
-	ui.countLabel.Text = string.format(self.S.ModuleCount, #self.ordered)
-	self:_placeCount()
 	local active = q == ""
 	for _, page in ipairs(self.pages) do
 		page.btn.count.Text = tostring(#page.groups)
@@ -2487,9 +2615,6 @@ function Window:SetTitle(t)
 	if self.islandFollow then
 		self:_setIslandText(t)
 	end
-	if not self.cfg.Footer and self.ui.footerRight then
-		self.ui.footerRight.Text = t
-	end
 end
 
 function Window:SetSubtitle(t)
@@ -2516,15 +2641,25 @@ function Window:SetIslandTitle(t)
 end
 
 function Window:SetWatermark(t)
-	local w = self.ui.watermark
-	if t == false or t == nil or t == "" then
-		w.Visible = false
-		return
+	self.watermark = t
+end
+
+function Window:SetWindowIcon(spec)
+	if self.ui.setBrandIcon then
+		self.ui.setBrandIcon(spec)
 	end
-	w.Text = tostring(t)
-	local width = TextService:GetTextSize(w.Text, 12, Enum.Font.GothamMedium, Vector2.new(1000, 16)).X
-	w.Size = UDim2.fromOffset(math.ceil(width) + 4, 16)
-	w.Visible = true
+	if self.ui.layoutBrand then
+		self.ui.layoutBrand()
+	end
+end
+
+function Window:SetIslandIcon(spec)
+	if self.ui.setIslandIcon then
+		self.ui.setIslandIcon(spec)
+	end
+	if self.ui.islandLayout then
+		self.ui.islandLayout(true)
+	end
 end
 
 function Window:SetToggleKey(key)
@@ -2692,10 +2827,25 @@ local function buildShell(W)
 		Visible = false,
 		Active = true,
 	}, ui.shell)
-	round(ui.main, 14)
+	round(ui.main, 18)
 	stroke(ui.main, T.edge, 0.8, 1)
 	ui.scale = new("UIScale", { Scale = 1 }, ui.main)
 	W.baseScale = W:_computeScale()
+	local sheen = new("Frame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = T.white,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+	}, ui.main)
+	round(sheen, 18)
+	new("UIGradient", {
+		Rotation = 90,
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.968),
+			NumberSequenceKeypoint.new(0.6, 0.995),
+			NumberSequenceKeypoint.new(1, 1),
+		}),
+	}, sheen)
 end
 
 local function attachDrag(W, frame)
@@ -2731,8 +2881,8 @@ local function attachResize(W, frame, cx, cy)
 		local limY = cy == 1 and (gp.Y + gv.Y - anchor.Y) or (anchor.Y - gp.Y)
 		local maxW = math.max(120, limX - 8)
 		local maxH = math.max(120, limY - 8)
-		local minW = math.min(620 * sc, startW)
-		local minH = math.min(320 * sc, startH)
+		local minW = math.min(700 * sc, startW)
+		local minH = math.min(380 * sc, startH)
 		local guiMid = gp + gv / 2
 		W.following = false
 		W.resizing = true
@@ -2786,10 +2936,20 @@ local function buildSidebar(W)
 		BackgroundTransparency = W:_t("side"),
 		BorderSizePixel = 0,
 	}, ui.main)
-	round(sidebar, 12)
+	round(sidebar, 14)
 	ui.sidebar = sidebar
 
-	ui.logo = makeIcon(sidebar, c.Icon, 26, T.white, { Position = UDim2.fromOffset(16, 16) })
+	local brandSpec = c.WindowIcon
+	if brandSpec == nil then
+		brandSpec = c.Icon
+	end
+	local brandSize = c.WindowIconSize or 26
+	local brandBox, setBrandIcon = makeIconSlot(sidebar, brandSpec, brandSize, T.white, {
+		Position = UDim2.fromOffset(16, 16),
+	}, c.Icon)
+	ui.logo = brandBox
+	ui.brandIcon = brandBox
+	ui.setBrandIcon = setBrandIcon
 	ui.brandTitle = label(sidebar, {
 		Position = UDim2.fromOffset(58, 13),
 		Size = UDim2.fromOffset(136, 20),
@@ -2806,6 +2966,15 @@ local function buildSidebar(W)
 		TextColor3 = T.sub,
 		TextTruncate = Enum.TextTruncate.AtEnd,
 	})
+	ui.layoutBrand = function()
+		local w = ui.brandIcon.Size.X.Offset
+		local x = 16 + w + 16
+		ui.brandTitle.Position = UDim2.fromOffset(x, 13)
+		ui.brandTitle.Size = UDim2.fromOffset(math.max(40, 196 - x), 20)
+		ui.brandSub.Position = UDim2.fromOffset(x, 33)
+		ui.brandSub.Size = UDim2.fromOffset(math.max(40, 196 - x), 16)
+	end
+	ui.layoutBrand()
 
 	local searchBox = new("Frame", {
 		Position = UDim2.fromOffset(10, 64),
@@ -2945,22 +3114,13 @@ local function buildContent(W)
 	}, content)
 	ui.header = header
 	ui.titleLabel = label(header, {
-		Position = UDim2.fromOffset(12, 0),
-		Size = UDim2.fromOffset(240, 66),
+		Position = UDim2.fromOffset(18, 0),
+		Size = UDim2.fromOffset(320, 66),
 		Text = "",
 		Font = Enum.Font.GothamBold,
 		TextSize = 26,
+		TextTruncate = Enum.TextTruncate.AtEnd,
 	})
-	ui.countLabel = label(header, {
-		Position = UDim2.fromOffset(90, 3),
-		Size = UDim2.fromOffset(160, 66),
-		Text = "",
-		TextSize = 13,
-		TextColor3 = T.sub,
-	})
-	ui.titleLabel:GetPropertyChangedSignal("TextBounds"):Connect(function()
-		W:_placeCount()
-	end)
 	attachDrag(W, header)
 
 	local minimize = new("TextButton", {
@@ -3000,7 +3160,7 @@ local function buildContent(W)
 
 	ui.scroll = new("ScrollingFrame", {
 		Position = UDim2.fromOffset(8, 80),
-		Size = UDim2.fromOffset(692, 432),
+		Size = UDim2.fromOffset(692, 472),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 3,
@@ -3013,43 +3173,12 @@ local function buildContent(W)
 		ui.scroll.ScrollingEnabled = v
 	end
 
-	local footer = new("Frame", {
-		Position = UDim2.fromOffset(0, 514),
-		Size = UDim2.fromOffset(708, 46),
+	ui.grid = new("Frame", {
+		Size = UDim2.fromOffset(684, 0),
 		BackgroundTransparency = 1,
-	}, content)
-	ui.footer = footer
-	ui.footerLine = new("Frame", {
-		Size = UDim2.fromOffset(696, 1),
-		BackgroundColor3 = T.white,
-		BackgroundTransparency = 0.92,
 		BorderSizePixel = 0,
-	}, footer)
-	local footDot = new("Frame", {
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 14, 0.5, 1),
-		Size = UDim2.fromOffset(8, 8),
-		BackgroundColor3 = T.accent2,
-		BorderSizePixel = 0,
-	}, footer)
-	round(footDot, 4)
-	ui.footerLeft = label(footer, {
-		Position = UDim2.fromOffset(32, 1),
-		Size = UDim2.fromOffset(300, 46),
-		Text = string.format(W.S.Enabled, 0),
-		TextSize = 12,
-		TextColor3 = T.sub,
-	})
-	ui.footerRight = label(footer, {
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -12, 0, 1),
-		Size = UDim2.fromOffset(290, 46),
-		Text = c.Footer or c.Title,
-		TextSize = 12,
-		TextColor3 = T.sub,
-		TextXAlignment = Enum.TextXAlignment.Right,
-		TextTruncate = Enum.TextTruncate.AtEnd,
-	})
+	}, ui.scroll)
+	ui.gridScale = new("UIScale", { Scale = 1 }, ui.grid)
 end
 
 local function buildIsland(W)
@@ -3091,7 +3220,13 @@ local function buildIsland(W)
 	end
 
 	local segs = {}
-	local titleIcon = makeIcon(island, c.Icon, 14, T.accent2, { ZIndex = 51 })
+	local islandSpec = c.IslandIcon
+	if islandSpec == nil then
+		islandSpec = c.Icon
+	end
+	local titleIcon, setIslandIcon = makeIconSlot(island, islandSpec, c.IslandIconSize or 14, T.accent2, { ZIndex = 51 }, c.Icon)
+	ui.islandIcon = titleIcon
+	ui.setIslandIcon = setIslandIcon
 	ui.islandTitleLabel = mkLabel(W.islandTitle, true)
 	table.insert(segs, { icon = titleIcon, label = ui.islandTitleLabel, maxW = 110, show = true, font = Enum.Font.GothamBold })
 
@@ -3155,9 +3290,11 @@ local function buildIsland(W)
 					local tx = TextService:GetTextSize(s.label.Text, 12, s.font, Vector2.new(1000, 34)).X
 					w = math.clamp(math.ceil(tx) + 1, 12, s.maxW)
 				end
-				put(s.icon, { Position = UDim2.fromOffset(x, 10) })
-				put(s.label, { Position = UDim2.fromOffset(x + 18, 0), Size = UDim2.fromOffset(w, 34) })
-				x += 18 + w
+				local iw = s.icon.Size.X.Offset
+				local ih = s.icon.Size.Y.Offset
+				put(s.icon, { Position = UDim2.fromOffset(x, math.floor((34 - ih) / 2)) })
+				put(s.label, { Position = UDim2.fromOffset(x + iw + 4, 0), Size = UDim2.fromOffset(w, 34) })
+				x += iw + 4 + w
 			end
 		end
 		for i = sepIdx + 1, 3 do
@@ -3198,24 +3335,6 @@ local function buildIsland(W)
 	tw(island, { Position = UDim2.new(0.5, 0, 0, 10) }, 0.7, Enum.EasingStyle.Back)
 end
 
-local function buildWatermark(W)
-	W.ui.watermark = new("TextLabel", {
-		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -14, 1, -10),
-		Size = UDim2.fromOffset(200, 16),
-		BackgroundTransparency = 1,
-		Font = Enum.Font.GothamMedium,
-		TextSize = 12,
-		TextColor3 = T.text,
-		TextTransparency = W.cfg.WatermarkTransparency,
-		TextXAlignment = Enum.TextXAlignment.Right,
-		Text = "",
-		Visible = false,
-		ZIndex = 5,
-	}, W.ui.gui)
-	W:SetWatermark(W.cfg.Watermark)
-end
-
 function UI:CreateWindow(cfg)
 	if Active then
 		Active:Destroy()
@@ -3225,6 +3344,10 @@ function UI:CreateWindow(cfg)
 		Title = "UI Library",
 		Subtitle = "v" .. UI.Version,
 		Icon = "terminal",
+		WindowIcon = nil,
+		WindowIconSize = 26,
+		IslandIcon = nil,
+		IslandIconSize = 14,
 		ThemePreset = "graphite",
 		ThemeName = "自定义",
 		Transparent = true,
@@ -3311,7 +3434,6 @@ function UI:CreateWindow(cfg)
 	if c.Island.Enabled then
 		buildIsland(W)
 	end
-	buildWatermark(W)
 
 	local acc, frames = 0, 0
 	W:Connect(RunService.RenderStepped, function(dt)
