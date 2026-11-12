@@ -2880,6 +2880,35 @@ function Window:SetWatermark(t)
 	self.watermark = t
 end
 
+function Window:SetPlayerHidden(hidden)
+	hidden = hidden and true or false
+	if self.playerHidden == hidden then
+		return
+	end
+	self.playerHidden = hidden
+	local ph = self.ui.playerHide
+	if ph then
+		tw(ph.overlay, { BackgroundTransparency = hidden and 0.35 or 1 }, 0.35)
+		tw(ph.avatar, { ImageTransparency = hidden and 0.65 or 0 }, 0.35)
+		tw(ph.nameLabel, { TextTransparency = hidden and 0.65 or 0 }, 0.35)
+		tw(ph.userLabel, { TextTransparency = hidden and 0.65 or 0 }, 0.35)
+		tw(ph.eyeOff, { ImageTransparency = hidden and 0 or 1 }, 0.35)
+		local g = ph.eyeOff:FindFirstChild("G")
+		if g then
+			tw(g, { TextTransparency = hidden and 0 or 1 }, 0.35)
+		end
+	end
+	local ip = self.ui.islandPlayer
+	if ip then
+		tw(ip.label, { TextTransparency = hidden and 1 or 0 }, 0.35)
+		tw(ip.eye, { ImageTransparency = hidden and 0 or 1 }, 0.35)
+		local g = ip.eye:FindFirstChild("G")
+		if g then
+			tw(g, { TextTransparency = hidden and 0 or 1 }, 0.35)
+		end
+	end
+end
+
 function Window:SetWindowIcon(spec)
 	if self.ui.setBrandIcon then
 		self.ui.setBrandIcon(spec)
@@ -3364,7 +3393,7 @@ local function buildSidebar(W)
 				avatar.Image = img
 			end
 		end)
-		label(plate, {
+		local displayNameLbl = label(plate, {
 			Position = UDim2.fromOffset(60, 11),
 			Size = UDim2.fromOffset(122, 18),
 			Text = lp.DisplayName,
@@ -3372,7 +3401,7 @@ local function buildSidebar(W)
 			TextSize = 14,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
-		label(plate, {
+		local userLbl = label(plate, {
 			Position = UDim2.fromOffset(60, 31),
 			Size = UDim2.fromOffset(122, 16),
 			Text = "@" .. lp.Name,
@@ -3380,6 +3409,41 @@ local function buildSidebar(W)
 			TextColor3 = T.sub,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
+		local overlay = new("Frame", {
+			Size = UDim2.fromScale(1, 1),
+			BackgroundColor3 = T.card2,
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			ZIndex = 5,
+		}, plate)
+		round(overlay, 12)
+		local eyeOff = makeIcon(overlay, "eye-off", 18, T.accent2, {
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Position = UDim2.fromScale(0.5, 0.5),
+			ZIndex = 6,
+		})
+		eyeOff.ImageTransparency = 1
+		local eg = eyeOff:FindFirstChild("G")
+		if eg then
+			eg.TextTransparency = 1
+		end
+		local hit = new("TextButton", {
+			Size = UDim2.fromScale(1, 1),
+			BackgroundTransparency = 1,
+			Text = "",
+			AutoButtonColor = false,
+			ZIndex = 10,
+		}, plate)
+		hit.Activated:Connect(function()
+			W:SetPlayerHidden(not W.playerHidden)
+		end)
+		ui.playerHide = {
+			overlay = overlay,
+			avatar = avatar,
+			nameLabel = displayNameLbl,
+			userLabel = userLbl,
+			eyeOff = eyeOff,
+		}
 	end
 
 	local corner = new("Frame", {
@@ -3661,7 +3725,19 @@ local function buildIsland(W)
 	table.insert(segs, { icon = titleIcon, label = ui.islandTitleLabel, maxW = 110, show = true, font = Enum.Font.GothamBold })
 
 	local userIcon = makeIcon(island, "user", 14, T.text, { ZIndex = 51 })
-	table.insert(segs, { icon = userIcon, label = mkLabel(lp.DisplayName, false), maxW = 80, show = ic.ShowUser, font = Enum.Font.GothamMedium })
+	local playerLbl = mkLabel(lp.DisplayName, false)
+	local islandEye = makeIcon(playerLbl, "eye-off", 14, T.accent2, {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		ZIndex = 52,
+	})
+	islandEye.ImageTransparency = 1
+	local ieg = islandEye:FindFirstChild("G")
+	if ieg then
+		ieg.TextTransparency = 1
+	end
+	table.insert(segs, { icon = userIcon, label = playerLbl, maxW = 80, show = ic.ShowUser, font = Enum.Font.GothamMedium })
+	ui.islandPlayer = { label = playerLbl, eye = islandEye }
 
 	local gameIcon = new("ImageLabel", {
 		Size = UDim2.fromOffset(14, 14),
@@ -3843,6 +3919,7 @@ function UI:CreateWindow(cfg)
 		conns = {},
 		themeMarks = {},
 		ui = {},
+		playerHidden = false,
 		query = "",
 		isOpen = false,
 		token = 0,
@@ -3912,7 +3989,7 @@ function UI:CreateWindow(cfg)
 			if i == dragInput then
 				endDrag()
 			end
-		elseif i.UserInputType == Enum.UserInputType.MouseButton1 then
+		elseif dragInput.UserInputType == Enum.UserInputType.MouseButton1 then
 			endDrag()
 		end
 	end)
