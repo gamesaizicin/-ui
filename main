@@ -371,7 +371,6 @@ local function makeIcon(parent, name, size, color, props)
 			img.ImageRectOffset = d.Offset
 		end
 	else
-		new("TextLabel", {
 		local g = new("TextLabel", {
 			Name = "G",
 			Size = UDim2.fromScale(1, 1),
@@ -635,7 +634,6 @@ local function makeIconSlot(parent, spec, defSize, defColor, props, defFallback)
 			o = { Source = sp }
 		end
 		local size = o.Size or defSize
-		local color = o.Color or defColor
 		local color = o.Color
 		if color == nil then
 			color = tokenKey or defColor
@@ -736,7 +734,6 @@ local function makeIconSlot(parent, spec, defSize, defColor, props, defFallback)
 	end
  
 	apply(spec)
-	return box, apply
 	return box, apply, repaint
 end
  
@@ -2063,39 +2060,15 @@ local function newGroup(W, page, opts)
 		local expired = false
 		local token = 0
 		local function paint(dur)
-			local active = pressing or flash
-			local bg = T.off
-			local tc = T.text
-			local sc = T.white
-			local st = 0.88
-			if active then
-				bg = T.accent
-				tc = T.white
-				sc = T.accent2
-				st = 0.35
-			elseif hovering then
-				tc = T.accent2
-				sc = T.accent2
-				st = 0.55
-			local bg, tc, sc, st
-			if pressing or flash then
-				bg, tc, sc, st = T.selected, T.white, T.accent2, 0.35
-			else
-				bg, tc, sc, st = T.off, T.text, T.white, 0.88
-			end
-			tw(b, { BackgroundColor3 = bg, TextColor3 = tc }, dur or 0.16)
-			tw(bs, { Color = sc, Transparency = st }, dur or 0.16)
-			tw(b, { BackgroundColor3 = bg, TextColor3 = tc }, dur or 0.14)
-			tw(bs, { Color = sc, Transparency = st }, dur or 0.14)
-		end
-		b.MouseEnter:Connect(function()
-			hovering = UserInputService:GetLastInputType() ~= Enum.UserInputType.Touch
-			paint(0.18)
-		end)
-		b.MouseLeave:Connect(function()
-			hovering = false
-			paint(0.18)
-		end)
+	local bg, tc, sc, st
+	if pressing or flash then
+		bg, tc, sc, st = T.selected, T.white, T.accent2, 0.35
+	else
+		bg, tc, sc, st = T.off, T.text, T.white, 0.88
+	end
+	tw(b, { BackgroundColor3 = bg, TextColor3 = tc }, dur or 0.14)
+	tw(bs, { Color = sc, Transparency = st }, dur or 0.14)
+end
 		local function release()
 			if not pressing then
 				return
@@ -2138,6 +2111,7 @@ local function newGroup(W, page, opts)
 		b.InputEnded:Connect(function(i)
 			if not isPress(i) or not pressing then
 				return
+				end
 			if isPress(i) then
 				release()
 			end
@@ -2152,34 +2126,28 @@ local function newGroup(W, page, opts)
 			end
 		end
 		local function pulse()
-			pressId += 1
-			local id = pressId
-			flash = true
-			token += 1
-			local my = token
-			pressing = true
-			flash = false
-			paint(0.06)
-			task.delay(0.18, function()
-				if id ~= pressId then
-			task.delay(0.1, function()
-				if my ~= token then
-					return
-				end
-				flash = false
-				paint(0.22)
-				pressing = false
-				flash = true
-				paint(0.1)
-				task.delay(0.12, function()
-					if my ~= token then
-						return
-					end
-					flash = false
-					paint(0.18)
-				end)
-			end)
+	pressId += 1
+	token += 1
+	local my = token
+	pressing = true
+	flash = false
+	paint(0.06)
+	task.delay(0.1, function()
+		if my ~= token then
+			return
 		end
+		pressing = false
+		flash = true
+		paint(0.1)
+		task.delay(0.12, function()
+			if my ~= token then
+				return
+			end
+			flash = false
+			paint(0.18)
+		end)
+	end)
+end
 		b.MouseButton1Click:Connect(fire)
 		return {
 			Fire = function()
@@ -3393,7 +3361,6 @@ local function buildSidebar(W)
 		brandSpec = c.Icon
 	end
 	local brandSize = c.WindowIconSize or 26
-	local brandBox, setBrandIcon = makeIconSlot(sidebar, brandSpec, brandSize, T.white, {
 	local brandBox, setBrandIcon, brandRepaint = makeIconSlot(sidebar, brandSpec, brandSize, "text", {
 		Position = UDim2.fromOffset(16, 16),
 	}, "terminal")
@@ -3850,7 +3817,6 @@ local function buildIsland(W)
  
 	local segs = {}
 	local islandSpec = c.IslandIcon or "terminal"
-	local titleIcon, setIslandIcon = makeIconSlot(island, islandSpec, c.IslandIconSize or 14, T.accent2, { ZIndex = 51 }, "terminal")
 	local titleIcon, setIslandIcon, islandRepaint = makeIconSlot(island, islandSpec, c.IslandIconSize or 14, "accent2", { ZIndex = 51 }, "terminal")
 	ui.islandIcon = titleIcon
 	ui.setIslandIcon = setIslandIcon
@@ -3859,10 +3825,8 @@ local function buildIsland(W)
 	ui.islandTitleLabel = mkLabel(W.islandTitle, true)
 	table.insert(segs, { icon = titleIcon, label = ui.islandTitleLabel, maxW = 110, show = true, font = Enum.Font.GothamBold })
  
-	local userIcon = makeIcon(island, "user", 14, T.text, { ZIndex = 51 })
 	local userIcon = makeIcon(island, "user", 14, "text", { ZIndex = 51 })
 	local playerLbl = mkLabel(lp.DisplayName, false)
-	local islandEye = makeIcon(playerLbl, "eye-off", 14, T.accent2, {
 	local islandEye = makeIcon(playerLbl, "eye-off", 14, "accent2", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
@@ -3887,7 +3851,6 @@ local function buildIsland(W)
 	local gameLabel = mkLabel(game.Name, false)
 	table.insert(segs, { icon = gameIcon, label = gameLabel, maxW = 80, show = ic.ShowGame, font = Enum.Font.GothamMedium })
  
-	local fpsIcon = makeIcon(island, "activity", 14, T.text, { ZIndex = 51 })
 	local fpsIcon = makeIcon(island, "activity", 14, "text", { ZIndex = 51 })
 	local fpsLabel = mkLabel("0 fps", false)
 	table.insert(segs, { icon = fpsIcon, label = fpsLabel, fixedW = 44, show = ic.ShowFPS, font = Enum.Font.GothamMedium })
