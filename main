@@ -7,9 +7,9 @@ local HttpService = game:GetService("HttpService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local TextService = game:GetService("TextService")
 local GuiService = game:GetService("GuiService")
-
+ 
 local lp = Players.LocalPlayer
-
+ 
 local UI = { Version = "1.1.0", IconResolver = nil }
 local Window = {}
 Window.__index = Window
@@ -18,10 +18,14 @@ Page.__index = Page
 local Active = nil
 local CARD_W = 336
 local HEAD_H = 96
-
+ 
 local themeKeys = { "bg", "side", "card", "card2", "stroke", "accent", "accent2", "text", "sub", "icon", "selected", "off", "knobOff", "dim", "edge", "island" }
 local baseKeys = { "bg", "side", "card", "card2", "stroke", "accent", "accent2", "text", "sub", "off", "knobOff", "dim", "edge", "island" }
-
+local themeKeySet = {}
+for _, k in ipairs(themeKeys) do
+	themeKeySet[k] = true
+end
+ 
 local function dedupe(p)
 	for i, k in ipairs(themeKeys) do
 		for j = 1, i - 1 do
@@ -34,7 +38,7 @@ local function dedupe(p)
 	end
 	return p
 end
-
+ 
 local function pal(t)
 	local p = {}
 	for i, k in ipairs(baseKeys) do
@@ -45,7 +49,7 @@ local function pal(t)
 	p.selected = p.accent
 	return dedupe(p)
 end
-
+ 
 local Themes = {
 	{ id = "graphite", name = "石墨蓝", p = pal({ { 17, 20, 26 }, { 26, 31, 40 }, { 40, 47, 60 }, { 24, 29, 38 }, { 96, 110, 134 }, { 74, 128, 184 }, { 138, 186, 228 }, { 231, 236, 243 }, { 134, 146, 164 }, { 52, 60, 76 }, { 168, 178, 194 }, { 190, 199, 212 }, { 192, 202, 220 }, { 22, 27, 35 } }) },
 	{ id = "moss", name = "苔绿", p = pal({ { 16, 21, 19 }, { 24, 31, 28 }, { 38, 49, 44 }, { 22, 29, 26 }, { 98, 120, 110 }, { 72, 132, 108 }, { 132, 192, 164 }, { 230, 238, 233 }, { 130, 148, 140 }, { 50, 63, 57 }, { 166, 182, 174 }, { 188, 203, 195 }, { 190, 208, 198 }, { 20, 27, 24 } }) },
@@ -59,17 +63,25 @@ local Themes = {
 	{ id = "ocean", name = "幽蓝", p = pal({ { 12, 18, 27 }, { 19, 27, 39 }, { 29, 40, 57 }, { 16, 23, 34 }, { 80, 108, 140 }, { 38, 132, 200 }, { 120, 196, 240 }, { 230, 240, 248 }, { 130, 150, 170 }, { 44, 58, 78 }, { 160, 178, 196 }, { 176, 192, 208 }, { 190, 208, 224 }, { 14, 21, 31 } }) },
 	{ id = "ember", name = "熔岩", p = pal({ { 24, 17, 15 }, { 34, 25, 22 }, { 47, 34, 30 }, { 29, 20, 17 }, { 128, 94, 80 }, { 214, 108, 62 }, { 246, 178, 120 }, { 245, 236, 230 }, { 160, 140, 130 }, { 66, 50, 44 }, { 180, 162, 152 }, { 196, 180, 170 }, { 214, 196, 186 }, { 27, 19, 17 } }) },
 	{ id = "slate", name = "雾灰", p = pal({ { 20, 22, 25 }, { 29, 32, 37 }, { 41, 45, 52 }, { 25, 28, 33 }, { 100, 108, 122 }, { 96, 112, 132 }, { 176, 190, 210 }, { 238, 241, 245 }, { 146, 154, 166 }, { 54, 58, 66 }, { 168, 176, 186 }, { 178, 186, 196 }, { 196, 204, 214 }, { 23, 25, 29 } }) },
+	{ id = "classic", name = "经典白", p = pal({ { 236, 239, 244 }, { 226, 230, 237 }, { 250, 251, 253 }, { 232, 236, 242 }, { 176, 186, 200 }, { 0, 120, 215 }, { 0, 90, 158 }, { 26, 31, 40 }, { 88, 98, 114 }, { 204, 211, 221 }, { 255, 255, 255 }, { 64, 72, 86 }, { 154, 164, 180 }, { 228, 232, 238 } }) },
+	{ id = "winblue", name = "经典蓝", p = pal({ { 10, 24, 44 }, { 16, 34, 60 }, { 22, 45, 76 }, { 18, 39, 67 }, { 56, 86, 124 }, { 36, 110, 200 }, { 110, 168, 255 }, { 234, 241, 250 }, { 152, 172, 200 }, { 30, 56, 90 }, { 196, 214, 238 }, { 198, 214, 236 }, { 120, 154, 200 }, { 7, 18, 34 } }) },
+	{ id = "solarized", name = "日光", p = pal({ { 0, 43, 54 }, { 5, 52, 64 }, { 9, 61, 74 }, { 6, 49, 60 }, { 42, 83, 94 }, { 38, 139, 210 }, { 42, 161, 152 }, { 238, 232, 213 }, { 147, 161, 161 }, { 20, 70, 82 }, { 131, 148, 150 }, { 198, 208, 202 }, { 88, 110, 117 }, { 0, 34, 43 } }) },
+	{ id = "nord", name = "北境", p = pal({ { 46, 52, 64 }, { 51, 58, 72 }, { 59, 66, 82 }, { 53, 60, 74 }, { 76, 86, 106 }, { 94, 129, 172 }, { 136, 192, 208 }, { 236, 239, 244 }, { 163, 174, 194 }, { 67, 76, 94 }, { 216, 222, 233 }, { 200, 208, 220 }, { 123, 138, 163 }, { 36, 41, 51 } }) },
+	{ id = "dracula", name = "德古拉", p = pal({ { 40, 42, 54 }, { 46, 48, 62 }, { 52, 55, 70 }, { 48, 50, 63 }, { 68, 71, 90 }, { 189, 147, 249 }, { 139, 233, 253 }, { 248, 248, 242 }, { 157, 162, 184 }, { 66, 68, 89 }, { 201, 205, 224 }, { 198, 203, 224 }, { 106, 111, 142 }, { 30, 32, 41 } }) },
+	{ id = "gruvbox", name = "复古", p = pal({ { 40, 40, 40 }, { 50, 48, 47 }, { 60, 56, 54 }, { 55, 52, 47 }, { 80, 73, 69 }, { 215, 153, 33 }, { 250, 189, 47 }, { 235, 219, 178 }, { 189, 174, 147 }, { 74, 68, 60 }, { 213, 196, 161 }, { 217, 201, 163 }, { 124, 111, 100 }, { 29, 32, 33 } }) },
+	{ id = "onedark", name = "原子", p = pal({ { 40, 44, 52 }, { 46, 51, 61 }, { 50, 56, 66 }, { 44, 49, 58 }, { 75, 82, 99 }, { 97, 175, 239 }, { 152, 195, 121 }, { 229, 233, 240 }, { 154, 163, 178 }, { 62, 68, 81 }, { 200, 205, 216 }, { 191, 198, 212 }, { 92, 99, 112 }, { 33, 37, 43 } }) },
+	{ id = "monokai", name = "摩奈", p = pal({ { 39, 40, 34 }, { 46, 47, 40 }, { 56, 58, 50 }, { 50, 52, 44 }, { 78, 81, 71 }, { 249, 38, 114 }, { 102, 217, 239 }, { 248, 248, 242 }, { 168, 169, 156 }, { 70, 72, 62 }, { 207, 209, 196 }, { 214, 215, 200 }, { 117, 113, 94 }, { 30, 31, 26 } }) },
 }
-
+ 
 local themeById = {}
 for _, th in ipairs(Themes) do
 	themeById[th.id] = th
 end
-
+ 
 local function mix(a, b, t)
 	return a:Lerp(b, t)
 end
-
+ 
 local function buildPalette(base, ov)
 	local p = {}
 	for _, k in ipairs(themeKeys) do
@@ -123,7 +135,7 @@ local function buildPalette(base, ov)
 	end
 	return dedupe(p)
 end
-
+ 
 local T = { white = Color3.new(1, 1, 1), black = Color3.new(0, 0, 0) }
 local bindings = setmetatable({}, { __mode = "k" })
 local colorProps = {
@@ -135,7 +147,7 @@ local colorProps = {
 	PlaceholderColor3 = true,
 }
 local currentTheme = "graphite"
-
+ 
 local function keyOf(c)
 	for _, k in ipairs(themeKeys) do
 		if T[k] == c then
@@ -144,7 +156,7 @@ local function keyOf(c)
 	end
 	return nil
 end
-
+ 
 local function bindColor(o, prop, c)
 	local k = keyOf(c)
 	local b = bindings[o]
@@ -158,12 +170,12 @@ local function bindColor(o, prop, c)
 		b[prop] = nil
 	end
 end
-
+ 
 local function setc(o, prop, c)
 	o[prop] = c
 	bindColor(o, prop, c)
 end
-
+ 
 local function applyPalette(p, instant)
 	for _, k in ipairs(themeKeys) do
 		T[k] = p[k]
@@ -185,9 +197,9 @@ local function applyPalette(p, instant)
 		end)
 	end
 end
-
+ 
 applyPalette(Themes[1].p, true)
-
+ 
 local function new(class, props, parent)
 	local o = Instance.new(class)
 	for k, v in pairs(props) do
@@ -201,11 +213,11 @@ local function new(class, props, parent)
 	end
 	return o
 end
-
+ 
 local function round(o, r)
 	return new("UICorner", { CornerRadius = UDim.new(0, r) }, o)
 end
-
+ 
 local function stroke(o, color, transparency, thickness)
 	return new("UIStroke", {
 		Color = color or T.stroke,
@@ -214,7 +226,7 @@ local function stroke(o, color, transparency, thickness)
 		ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 	}, o)
 end
-
+ 
 local function tw(o, props, t, style, dir)
 	if typeof(o) == "Instance" and o.Parent == nil then
 		return
@@ -232,7 +244,7 @@ local function tw(o, props, t, style, dir)
 	tween:Play()
 	return tween
 end
-
+ 
 local function label(parent, props)
 	local base = {
 		BackgroundTransparency = 1,
@@ -248,7 +260,7 @@ local function label(parent, props)
 	end
 	return new("TextLabel", base, parent)
 end
-
+ 
 local glyphs = {
 	swords = "⚔",
 	user = "☺",
@@ -265,7 +277,7 @@ local glyphs = {
 	play = "▶",
 	["chevron-right"] = "›",
 }
-
+ 
 local iconApi
 do
 	local ok, res = pcall(function()
@@ -276,9 +288,9 @@ do
 		iconApi = res
 	end
 end
-
+ 
 local iconCache = {}
-
+ 
 local function resolveIcon(name)
 	if iconCache[name] ~= nil then
 		return iconCache[name] or nil
@@ -311,15 +323,39 @@ local function resolveIcon(name)
 	iconCache[name] = data or false
 	return data
 end
-
+ 
+local function bindToken(o, prop, k)
+	if not k then
+		return
+	end
+	local b = bindings[o]
+	if not b then
+		b = {}
+		bindings[o] = b
+	end
+	b[prop] = k
+end
+ 
+local function colorOf(c)
+	if type(c) == "string" then
+		return themeKeySet[c] and T[c] or T.icon
+	end
+	return c or T.icon
+end
+ 
 local function makeIcon(parent, name, size, color, props)
+	local key = type(color) == "string" and themeKeySet[color] and color or nil
 	local img = new("ImageLabel", {
 		BackgroundTransparency = 1,
 		Size = UDim2.fromOffset(size, size),
 		ImageColor3 = color or T.icon,
+		ImageColor3 = colorOf(color),
 		BorderSizePixel = 0,
 		ScaleType = Enum.ScaleType.Fit,
 	}, parent)
+	if key then
+		bindToken(img, "ImageColor3", key)
+	end
 	if props then
 		for k, v in pairs(props) do
 			img[k] = v
@@ -336,18 +372,23 @@ local function makeIcon(parent, name, size, color, props)
 		end
 	else
 		new("TextLabel", {
+		local g = new("TextLabel", {
 			Name = "G",
 			Size = UDim2.fromScale(1, 1),
 			BackgroundTransparency = 1,
 			Text = glyphs[name] or "•",
 			TextColor3 = color or T.icon,
+			TextColor3 = colorOf(color),
 			Font = Enum.Font.GothamBold,
 			TextScaled = true,
 		}, img)
+		if key then
+			bindToken(g, "TextColor3", key)
+		end
 	end
 	return img
 end
-
+ 
 local function tint(img, c, t)
 	tw(img, { ImageColor3 = c }, t or 0.2)
 	local g = img:FindFirstChild("G")
@@ -355,7 +396,7 @@ local function tint(img, c, t)
 		tw(g, { TextColor3 = c }, t or 0.2)
 	end
 end
-
+ 
 local function paintIcon(img, c)
 	setc(img, "ImageColor3", c)
 	local g = img:FindFirstChild("G")
@@ -363,7 +404,7 @@ local function paintIcon(img, c)
 		setc(g, "TextColor3", c)
 	end
 end
-
+ 
 local function fadeIcon(img, a)
 	local g = img:FindFirstChild("G")
 	tw(img, { ImageTransparency = a }, 0.2)
@@ -371,7 +412,7 @@ local function fadeIcon(img, a)
 		tw(g, { TextTransparency = a }, 0.2)
 	end
 end
-
+ 
 local function getHost()
 	local ok, res = pcall(function()
 		return gethui()
@@ -387,14 +428,14 @@ local function getHost()
 	end
 	return lp:WaitForChild("PlayerGui")
 end
-
+ 
 local gameKey = tostring((game.GameId ~= 0) and game.GameId or game.PlaceId)
 local fileOk = type(writefile) == "function" and type(readfile) == "function" and type(isfile) == "function"
 local store = { modules = {} }
 local saveFolder = "UILib"
 local saveOn = false
 local saveToken = 0
-
+ 
 local function loadStore(folder)
 	store = { modules = {} }
 	saveFolder = folder
@@ -412,7 +453,7 @@ local function loadStore(folder)
 		store = res
 	end
 end
-
+ 
 local function saveStore()
 	if not fileOk then
 		return
@@ -425,7 +466,7 @@ local function saveStore()
 		writefile(saveFolder .. "/" .. gameKey .. ".json", HttpService:JSONEncode(store))
 	end)
 end
-
+ 
 local function scheduleSave()
 	if not saveOn then
 		return
@@ -438,12 +479,12 @@ local function scheduleSave()
 		end
 	end)
 end
-
+ 
 local dragFn
 local dragInput
 local dragEnd
 local scrollLock = function() end
-
+ 
 local function endDrag()
 	local f = dragEnd
 	dragFn = nil
@@ -454,7 +495,7 @@ local function endDrag()
 		f()
 	end
 end
-
+ 
 local function beginDrag(i, fn, onEnd)
 	if dragFn then
 		return false
@@ -471,11 +512,11 @@ local function beginDrag(i, fn, onEnd)
 	end)
 	return true
 end
-
+ 
 local function isPress(i)
 	return i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch
 end
-
+ 
 local function hashStr(str)
 	local h = 5381
 	for i = 1, #str do
@@ -483,7 +524,7 @@ local function hashStr(str)
 	end
 	return tostring(h)
 end
-
+ 
 local function imageUrl(src)
 	if type(src) == "number" then
 		return "rbxassetid://" .. math.floor(src)
@@ -502,7 +543,7 @@ local function imageUrl(src)
 	end
 	return s
 end
-
+ 
 local function resolveImage(src, cb)
 	local url = imageUrl(src)
 	if not url then
@@ -535,7 +576,7 @@ local function resolveImage(src, cb)
 	end
 	cb(url)
 end
-
+ 
 local function isImageSource(src)
 	if type(src) == "number" then
 		return src > 0
@@ -548,7 +589,7 @@ local function isImageSource(src)
 		or s:match("^https?://") ~= nil
 		or s:match("[%?&]id=%d+") ~= nil
 end
-
+ 
 local function readList(src)
 	if type(src) == "table" then
 		return src
@@ -561,7 +602,7 @@ local function readList(src)
 	end
 	return nil
 end
-
+ 
 local function makeIconSlot(parent, spec, defSize, defColor, props, defFallback)
 	local box = new("Frame", {
 		Size = UDim2.fromOffset(defSize, defSize),
@@ -573,13 +614,19 @@ local function makeIconSlot(parent, spec, defSize, defColor, props, defFallback)
 			box[k] = v
 		end
 	end
-
+ 
+	local tokenKey = type(defColor) == "string" and themeKeySet[defColor] and defColor or nil
+	local mode = "icon"
+	local autoColor = true
+	local fallbackIcon = nil
+ 
 	local function clear()
+		fallbackIcon = nil
 		for _, ch in ipairs(box:GetChildren()) do
 			ch:Destroy()
 		end
 	end
-
+ 
 	local function apply(sp)
 		local o
 		if type(sp) == "table" then
@@ -589,6 +636,11 @@ local function makeIconSlot(parent, spec, defSize, defColor, props, defFallback)
 		end
 		local size = o.Size or defSize
 		local color = o.Color or defColor
+		local color = o.Color
+		if color == nil then
+			color = tokenKey or defColor
+		end
+		autoColor = o.Color == nil
 		local src = o.Source
 		if src == nil then
 			src = o.Image
@@ -600,6 +652,7 @@ local function makeIconSlot(parent, spec, defSize, defColor, props, defFallback)
 		clear()
 		local fb = o.Fallback or defFallback or "terminal"
 		if src == nil or not isImageSource(src) then
+			mode = "icon"
 			local name = (tostring(src or ""):gsub("^%s+", ""):gsub("%s+$", ""):lower():gsub("^lucide[:%s]*", ""))
 			if name == "" then
 				name = fb
@@ -607,10 +660,12 @@ local function makeIconSlot(parent, spec, defSize, defColor, props, defFallback)
 			makeIcon(box, name, size, color, { Size = UDim2.fromOffset(size, size) })
 			return
 		end
+		mode = "image"
 		local fallback = makeIcon(box, fb, size, color, {
 			Size = UDim2.fromOffset(size, size),
 			ZIndex = 1,
 		})
+		fallbackIcon = fallback
 		fallback.BackgroundTransparency = 1
 		local img = new("ImageLabel", {
 			Size = UDim2.fromScale(1, 1),
@@ -664,11 +719,27 @@ local function makeIconSlot(parent, spec, defSize, defColor, props, defFallback)
 			end)
 		end)
 	end
-
+ 
+	local function repaint()
+		if not autoColor or not tokenKey then
+			return
+		end
+		if mode == "icon" then
+			for _, ch in ipairs(box:GetChildren()) do
+				if ch:IsA("ImageLabel") then
+					tint(ch, T[tokenKey], 0.4)
+				end
+			end
+		elseif fallbackIcon and fallbackIcon.Parent then
+			tint(fallbackIcon, T[tokenKey], 0.4)
+		end
+	end
+ 
 	apply(spec)
 	return box, apply
+	return box, apply, repaint
 end
-
+ 
 local function buildSwitch(parent, w, h)
 	local track = new("TextButton", {
 		AutoButtonColor = false,
@@ -707,12 +778,12 @@ local function buildSwitch(parent, w, h)
 	end
 	return track, set
 end
-
+ 
 local hueSeq = {}
 for i = 0, 6 do
 	table.insert(hueSeq, ColorSequenceKeypoint.new(i / 6, Color3.fromHSV(i == 6 and 0.9999 or i / 6, 1, 1)))
 end
-
+ 
 function UI:RegisterTheme(id, name, overrides, baseId)
 	local base = themeById[baseId or "graphite"] or Themes[1]
 	local th = { id = id, name = name or id, p = buildPalette(base.p, overrides or {}) }
@@ -728,7 +799,7 @@ function UI:RegisterTheme(id, name, overrides, baseId)
 	themeById[id] = th
 	return th
 end
-
+ 
 function UI:GetThemes()
 	local out = {}
 	for _, th in ipairs(Themes) do
@@ -736,13 +807,13 @@ function UI:GetThemes()
 	end
 	return out
 end
-
+ 
 function UI:Destroy()
 	if Active then
 		Active:Destroy()
 	end
 end
-
+ 
 local function newGroup(W, page, opts)
 	opts = opts or {}
 	local ui = W.ui
@@ -784,7 +855,7 @@ local function newGroup(W, page, opts)
 			W.Flags[f] = v
 		end
 	end
-
+ 
 	local g = {
 		page = page,
 		name = name,
@@ -796,14 +867,14 @@ local function newGroup(W, page, opts)
 		controls = {},
 		h = headH,
 	}
-
+ 
 	local slot = new("Frame", {
 		Size = UDim2.fromOffset(CARD_W, headH + 4),
 		BackgroundTransparency = 1,
 		Visible = false,
 	}, ui.grid or ui.scroll)
 	g.slot = slot
-
+ 
 	local card = new("Frame", {
 		Size = UDim2.fromOffset(CARD_W, headH),
 		BackgroundColor3 = T.card,
@@ -814,7 +885,7 @@ local function newGroup(W, page, opts)
 	round(card, 14)
 	g.card = card
 	local cs = stroke(card, T.edge, hidden and 1 or 0.9, 1)
-
+ 
 	local glow = new("Frame", {
 		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = T.accent,
@@ -822,7 +893,7 @@ local function newGroup(W, page, opts)
 		BorderSizePixel = 0,
 	}, card)
 	round(glow, 14)
-
+ 
 	if not hidden then
 		local sheen = new("Frame", {
 			Size = UDim2.fromScale(1, 1),
@@ -840,7 +911,7 @@ local function newGroup(W, page, opts)
 			}),
 		}, sheen)
 	end
-
+ 
 	local hit
 	local chevron, sep, textW
 	if not hidden then
@@ -850,7 +921,7 @@ local function newGroup(W, page, opts)
 			AutoButtonColor = false,
 			Text = "",
 		}, card)
-
+ 
 		textW = hasToggle and (CARD_W - 170) or (CARD_W - 110)
 		label(card, {
 			Position = UDim2.fromOffset(18, desc == "" and 35 or 20),
@@ -870,7 +941,7 @@ local function newGroup(W, page, opts)
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			})
 		end
-
+ 
 		chevron = makeIcon(card, "chevron-down", 16, T.icon, {
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.fromOffset(CARD_W - 22, headH / 2),
@@ -909,18 +980,18 @@ local function newGroup(W, page, opts)
 			pinIcon.Rotation = 45
 		end
 	end
-
+ 
 	local track, setSwitch = buildSwitch(card, 58, 32)
 	track.AnchorPoint = Vector2.new(1, 0.5)
 	track.Position = UDim2.fromOffset(CARD_W - 74, headH / 2)
 	track.Visible = hasToggle and not hidden
-
+ 
 	local body = new("Frame", {
 		Position = UDim2.fromOffset(0, headH + 2),
 		Size = UDim2.fromOffset(CARD_W, 400),
 		BackgroundTransparency = 1,
 	}, card)
-
+ 
 	if not hidden then
 		sep = new("Frame", {
 			Position = UDim2.fromOffset(16, headH),
@@ -931,7 +1002,7 @@ local function newGroup(W, page, opts)
 			Visible = false,
 		}, card)
 	end
-
+ 
 	local function setHeight(h, animate)
 		g.h = h
 		local a = UDim2.fromOffset(CARD_W, h + 4)
@@ -945,7 +1016,7 @@ local function newGroup(W, page, opts)
 		end
 		W:_relayout(animate, false)
 	end
-
+ 
 	local function layoutBody(animate)
 		local y = 0
 		for _, c in ipairs(g.controls) do
@@ -962,7 +1033,7 @@ local function newGroup(W, page, opts)
 		local total = hidden and math.max(0, y - 6) or (headH + 2 + y + 6)
 		setHeight(g.expanded and total or headH, animate)
 	end
-
+ 
 	local wrappers = {}
 	local function addControl(row, h)
 		local c = { row = wrappers[row] or row, h = h }
@@ -976,7 +1047,7 @@ local function newGroup(W, page, opts)
 		layoutBody(false)
 		return c
 	end
-
+ 
 	local function newRow()
 		local outer = new("Frame", {
 			BackgroundTransparency = 1,
@@ -991,7 +1062,7 @@ local function newGroup(W, page, opts)
 		wrappers[inner] = outer
 		return inner
 	end
-
+ 
 	if hit then
 		hit.MouseButton1Click:Connect(function()
 			if #g.controls == 0 then
@@ -1008,7 +1079,7 @@ local function newGroup(W, page, opts)
 			tw(cs, { Transparency = g.enabled and 0.55 or 0.86 }, 0.2)
 		end)
 	end
-
+ 
 	local function setState(v, silent)
 		g.enabled = v
 		setSwitch(v)
@@ -1024,28 +1095,28 @@ local function newGroup(W, page, opts)
 			task.spawn(opts.Callback, v)
 		end
 	end
-
+ 
 	function g:Get()
 		return g.enabled
 	end
-
+ 
 	function g:Set(v, silent)
 		if hasToggle then
 			setState(v and true or false, silent)
 		end
 	end
-
+ 
 	track.MouseButton1Click:Connect(function()
 		setState(not g.enabled)
 	end)
-
+ 
 	if hasToggle then
 		setFlag(opts.Flag, false)
 		if ms.enabled == true or (ms.enabled == nil and opts.Default == true) then
 			task.defer(setState, true)
 		end
 	end
-
+ 
 	function g:AddToggle(o)
 		o = o or {}
 		local row = newRow()
@@ -1095,7 +1166,7 @@ local function newGroup(W, page, opts)
 			end,
 		}
 	end
-
+ 
 	function g:AddSlider(o)
 		o = o or {}
 		local min, max = o.Min or 0, o.Max or 100
@@ -1200,7 +1271,7 @@ local function newGroup(W, page, opts)
 			end,
 		}
 	end
-
+ 
 	function g:AddDropdown(o)
 		o = o or {}
 		local W2 = CARD_W - 32
@@ -1737,7 +1808,7 @@ local function newGroup(W, page, opts)
 		round(swatch, 6)
 		bindings[swatch] = nil
 		stroke(swatch, T.white, 0.6)
-
+ 
 		local svBox = new("TextButton", {
 			Position = UDim2.fromOffset(10, 46),
 			Size = UDim2.fromOffset(W2 - 40, 100),
@@ -1770,7 +1841,7 @@ local function newGroup(W, page, opts)
 		}, svBox)
 		round(svCur, 6)
 		stroke(svCur, T.white, 0, 2)
-
+ 
 		local hueBar = new("TextButton", {
 			Position = UDim2.fromOffset(W2 - 20, 46),
 			Size = UDim2.fromOffset(14, 100),
@@ -1790,7 +1861,7 @@ local function newGroup(W, page, opts)
 		}, hueBar)
 		round(hueCur, 3)
 		stroke(hueCur, T.black, 0.5)
-
+ 
 		local function apply(fire)
 			local col = Color3.fromHSV(h, s, v)
 			swatch.BackgroundColor3 = col
@@ -1813,7 +1884,7 @@ local function newGroup(W, page, opts)
 		if restored and o.Callback then
 			task.defer(o.Callback, Color3.fromHSV(h, s, v))
 		end
-
+ 
 		svBox.InputBegan:Connect(function(i)
 			if isPress(i) and not dragFn then
 				beginDrag(i, function(p)
@@ -1835,7 +1906,7 @@ local function newGroup(W, page, opts)
 				end)
 			end
 		end)
-
+ 
 		local open = false
 		head.MouseButton1Click:Connect(function()
 			open = not open
@@ -1852,7 +1923,7 @@ local function newGroup(W, page, opts)
 			end,
 		}
 	end
-
+ 
 	function g:AddKeybind(o)
 		o = o or {}
 		local W2 = CARD_W - 32
@@ -1932,28 +2003,37 @@ local function newGroup(W, page, opts)
 			end,
 		}
 	end
-
+ 
 	function g:AddButton(o)
 		o = o or {}
 		local W2 = CARD_W - 32
 		local desc = o.Description or o.Desc or ""
 		local caption = o.Text or o.ButtonText or W.S.Run
+		local twoLine = desc ~= ""
+		local rowH = twoLine and 44 or 36
 		local row = newRow()
 		addControl(row, 46)
+		addControl(row, rowH)
 		label(row, {
 			Position = UDim2.fromOffset(0, desc == "" and 14 or 4),
 			Size = UDim2.fromOffset(W2 - 100, 20),
+			Position = UDim2.fromOffset(0, twoLine and 3 or 0),
+			Size = UDim2.fromOffset(204, twoLine and 20 or 36),
 			Text = o.Name or "Button",
 			TextSize = 15,
 			TextColor3 = T.sub,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
 		if desc ~= "" then
+		if twoLine then
 			label(row, {
 				Position = UDim2.fromOffset(0, 23),
 				Size = UDim2.fromOffset(W2 - 100, 20),
+				Position = UDim2.fromOffset(0, 22),
+				Size = UDim2.fromOffset(204, 16),
 				Text = desc,
 				TextSize = 15,
+				TextSize = 13,
 				TextColor3 = T.dim,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			})
@@ -1962,11 +2042,14 @@ local function newGroup(W, page, opts)
 			AnchorPoint = Vector2.new(1, 0.5),
 			Position = UDim2.fromOffset(W2, 23),
 			Size = UDim2.fromOffset(88, 32),
+			Position = UDim2.fromOffset(W2, rowH / 2),
+			Size = UDim2.fromOffset(76, 28),
 			BackgroundColor3 = T.off,
 			AutoButtonColor = false,
 			Text = tostring(caption),
 			Font = Enum.Font.GothamBold,
 			TextSize = 14,
+			TextSize = 13,
 			TextColor3 = T.text,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 			BorderSizePixel = 0,
@@ -1978,6 +2061,7 @@ local function newGroup(W, page, opts)
 		local flash = false
 		local pressId = 0
 		local expired = false
+		local token = 0
 		local function paint(dur)
 			local active = pressing or flash
 			local bg = T.off
@@ -1993,9 +2077,16 @@ local function newGroup(W, page, opts)
 				tc = T.accent2
 				sc = T.accent2
 				st = 0.55
+			local bg, tc, sc, st
+			if pressing or flash then
+				bg, tc, sc, st = T.selected, T.white, T.accent2, 0.35
+			else
+				bg, tc, sc, st = T.off, T.text, T.white, 0.88
 			end
 			tw(b, { BackgroundColor3 = bg, TextColor3 = tc }, dur or 0.16)
 			tw(bs, { Color = sc, Transparency = st }, dur or 0.16)
+			tw(b, { BackgroundColor3 = bg, TextColor3 = tc }, dur or 0.14)
+			tw(bs, { Color = sc, Transparency = st }, dur or 0.14)
 		end
 		b.MouseEnter:Connect(function()
 			hovering = UserInputService:GetLastInputType() ~= Enum.UserInputType.Touch
@@ -2005,12 +2096,30 @@ local function newGroup(W, page, opts)
 			hovering = false
 			paint(0.18)
 		end)
+		local function release()
+			if not pressing then
+				return
+			end
+			pressing = false
+			token += 1
+			local my = token
+			flash = true
+			paint(0.1)
+			task.delay(0.12, function()
+				if my ~= token then
+					return
+				end
+				flash = false
+				paint(0.18)
+			end)
+		end
 		b.InputBegan:Connect(function(i)
 			if not isPress(i) then
 				return
 			end
 			pressId += 1
 			local id = pressId
+			token += 1
 			pressing = true
 			expired = false
 			paint(0.07)
@@ -2023,10 +2132,14 @@ local function newGroup(W, page, opts)
 					paint(0.2)
 				end
 			end)
+			flash = false
+			paint(0.06)
 		end)
 		b.InputEnded:Connect(function(i)
 			if not isPress(i) or not pressing then
 				return
+			if isPress(i) then
+				release()
 			end
 			pressing = false
 			if expired then
@@ -2042,13 +2155,29 @@ local function newGroup(W, page, opts)
 			pressId += 1
 			local id = pressId
 			flash = true
+			token += 1
+			local my = token
+			pressing = true
+			flash = false
 			paint(0.06)
 			task.delay(0.18, function()
 				if id ~= pressId then
+			task.delay(0.1, function()
+				if my ~= token then
 					return
 				end
 				flash = false
 				paint(0.22)
+				pressing = false
+				flash = true
+				paint(0.1)
+				task.delay(0.12, function()
+					if my ~= token then
+						return
+					end
+					flash = false
+					paint(0.18)
+				end)
 			end)
 		end
 		b.MouseButton1Click:Connect(fire)
@@ -2062,7 +2191,7 @@ local function newGroup(W, page, opts)
 			end,
 		}
 	end
-
+ 
 	function g:AddTextBox(o)
 		o = o or {}
 		local W2 = CARD_W - 32
@@ -2136,7 +2265,7 @@ local function newGroup(W, page, opts)
 			end,
 		}
 	end
-
+ 
 	function g:AddImage(o, textArg)
 		if type(o) == "table" then
 			local t = {}
@@ -2321,7 +2450,7 @@ local function newGroup(W, page, opts)
 			end,
 		}
 	end
-
+ 
 	function g:AddThemePicker(o)
 		o = o or {}
 		local W2 = CARD_W - 32
@@ -2400,22 +2529,22 @@ local function newGroup(W, page, opts)
 			end,
 		}
 	end
-
+ 
 	table.insert(W.groups, g)
 	table.insert(page.groups, g)
 	W:_refresh()
 	return g
 end
-
+ 
 function Page:AddGroup(opts)
 	return newGroup(self.win, self, opts)
 end
-
+ 
 function Page:AddImage(o, textArg)
 	local g = newGroup(self.win, self, { Name = "Media", Hidden = true, Pin = false })
 	return g:AddImage(o, textArg)
 end
-
+ 
 function Page:AddMainButton(opts)
 	opts = opts or {}
 	local W = self.win
@@ -2455,7 +2584,7 @@ function Page:AddMainButton(opts)
 		ZIndex = 4,
 	}, card)
 	round(flash, 12)
-
+ 
 	local badge = new("Frame", {
 		Position = UDim2.fromOffset(14, 14),
 		Size = UDim2.fromOffset(36, 36),
@@ -2469,7 +2598,7 @@ function Page:AddMainButton(opts)
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 	})
-
+ 
 	local title = label(card, {
 		Position = UDim2.fromOffset(62, desc == "" and 0 or 11),
 		Size = UDim2.fromOffset(CARD_W - 110, desc == "" and 64 or 22),
@@ -2490,18 +2619,18 @@ function Page:AddMainButton(opts)
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
 	end
-
+ 
 	local chev = makeIcon(card, "chevron-right", 18, T.white, {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromOffset(CARD_W - 28, 32),
 	})
 	fadeIcon(chev, 0.4)
-
+ 
 	local function release()
 		tw(press, { Scale = 1 }, 0.35, Enum.EasingStyle.Back)
 		tw(sheen, { BackgroundTransparency = 0 }, 0.2)
 	end
-
+ 
 	card.MouseEnter:Connect(function()
 		tw(card, { BackgroundTransparency = 0 }, 0.18)
 		tw(cs, { Transparency = 0.3 }, 0.18)
@@ -2526,7 +2655,7 @@ function Page:AddMainButton(opts)
 			end)
 		end
 	end)
-
+ 
 	local function fire()
 		flash.BackgroundTransparency = 0.82
 		tw(flash, { BackgroundTransparency = 1 }, 0.4)
@@ -2535,7 +2664,7 @@ function Page:AddMainButton(opts)
 		end
 	end
 	card.Activated:Connect(fire)
-
+ 
 	table.insert(W.groups, g)
 	table.insert(self.groups, g)
 	W:_refresh()
@@ -2548,11 +2677,11 @@ function Page:AddMainButton(opts)
 		end,
 	}
 end
-
+ 
 function Window:Connect(signal, fn)
 	table.insert(self.conns, signal:Connect(fn))
 end
-
+ 
 function Window:_t(kind)
 	local c = self.cfg
 	if not c.Transparent then
@@ -2565,21 +2694,21 @@ function Window:_t(kind)
 	end
 	return c.CardTransparency
 end
-
+ 
 function Window:_blurSize()
 	if self.cfg.Blur and self.cfg.Transparent then
 		return self.cfg.BlurSize
 	end
 	return 0
 end
-
+ 
 function Window:_fit()
 	local v = self.ui.gui.AbsoluteSize
 	local w = (self.designW or 940) + 80
 	local h = (self.designH or 560) + 80
 	return math.clamp(math.min(v.X / w, v.Y / h), 0.45, 1.2)
 end
-
+ 
 function Window:_computeScale()
 	local v = self.ui.gui.AbsoluteSize
 	local w = self.designW or 940
@@ -2587,7 +2716,7 @@ function Window:_computeScale()
 	local s = self.manualScale or (self:_fit() * self.cfg.Scale)
 	return math.clamp(s, 0.4, math.max(0.4, math.min(v.X / w, v.Y / h)))
 end
-
+ 
 function Window:_layoutHandles(sc)
 	local hs = math.clamp(44 / sc, 32, 72)
 	local edge = 14
@@ -2598,7 +2727,7 @@ function Window:_layoutHandles(sc)
 		h.frame.Position = UDim2.new((h.cx == 1) and 1 or 0, dx, (h.cy == 1) and 1 or 0, dy)
 	end
 end
-
+ 
 function Window:_gridMetrics()
 	local ui = self.ui
 	if not ui.scroll then
@@ -2615,7 +2744,7 @@ function Window:_gridMetrics()
 	end
 	return s, baseX
 end
-
+ 
 function Window:_reflow()
 	local ui = self.ui
 	if not ui.main or not ui.content then
@@ -2644,10 +2773,10 @@ function Window:_reflow()
 	end
 	self:_relayout(false, false)
 end
-
+ 
 function Window:_updateFooter()
 end
-
+ 
 function Window:_relayout(animate, enter, dur, style, dir)
 	local ui = self.ui
 	if not ui.scroll then
@@ -2684,7 +2813,7 @@ function Window:_relayout(animate, enter, dur, style, dir)
 	ui.grid.Size = UDim2.fromOffset(CARD_W * 2 + 12, maxY)
 	ui.scroll.CanvasSize = UDim2.fromOffset(0, math.ceil((maxY + 8) * scale))
 end
-
+ 
 function Window:_reorder(moved)
 	local pinned, normal = {}, {}
 	for _, g in ipairs(self.groups) do
@@ -2707,7 +2836,7 @@ function Window:_reorder(moved)
 	end
 	self:_relayout(true, false, 0.8, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut)
 end
-
+ 
 local function styleNav(btn, selected)
 	tint(btn.icon, selected and T.white or T.icon, 0.25)
 	tw(btn.name, { TextColor3 = selected and T.white or T.dim }, 0.25)
@@ -2715,7 +2844,7 @@ local function styleNav(btn, selected)
 	btn.name.Font = selected and Enum.Font.GothamBold or Enum.Font.GothamMedium
 	tw(btn.button, { BackgroundTransparency = 1 }, 0.2)
 end
-
+ 
 function Window:_refresh(mode)
 	local ui = self.ui
 	if not ui.scroll then
@@ -2764,7 +2893,7 @@ function Window:_refresh(mode)
 		ui.indicator.BackgroundTransparency = 1
 	end
 end
-
+ 
 function Window:AddPage(opts)
 	if type(opts) == "string" then
 		opts = { Name = opts }
@@ -2835,7 +2964,7 @@ function Window:AddPage(opts)
 	self:_refresh()
 	return page
 end
-
+ 
 function Window:SelectPage(page)
 	self.current = page
 	if self.ui.searchInput.Text ~= "" then
@@ -2844,7 +2973,7 @@ function Window:SelectPage(page)
 		self:_refresh("enter")
 	end
 end
-
+ 
 function Window:SetTitle(t)
 	self.cfg.Title = t
 	self.ui.brandTitle.Text = t
@@ -2852,12 +2981,12 @@ function Window:SetTitle(t)
 		self:_setIslandText(t)
 	end
 end
-
+ 
 function Window:SetSubtitle(t)
 	self.cfg.Subtitle = t
 	self.ui.brandSub.Text = t
 end
-
+ 
 function Window:_setIslandText(t)
 	self.islandTitle = t
 	if self.ui.islandTitleLabel then
@@ -2865,7 +2994,7 @@ function Window:_setIslandText(t)
 		self.ui.islandLayout(true)
 	end
 end
-
+ 
 function Window:SetIslandTitle(t)
 	if t == nil then
 		self.islandFollow = true
@@ -2875,11 +3004,11 @@ function Window:SetIslandTitle(t)
 		self:_setIslandText(t)
 	end
 end
-
+ 
 function Window:SetWatermark(t)
 	self.watermark = t
 end
-
+ 
 function Window:SetPlayerHidden(hidden)
 	hidden = hidden and true or false
 	if self.playerHidden == hidden then
@@ -2908,7 +3037,7 @@ tw(ph.userLabel, { TextTransparency = hidden and 1 or 0 }, 0.35)
 		end
 	end
 end
-
+ 
 function Window:SetWindowIcon(spec)
 	if self.ui.setBrandIcon then
 		self.ui.setBrandIcon(spec)
@@ -2917,7 +3046,7 @@ function Window:SetWindowIcon(spec)
 		self.ui.layoutBrand()
 	end
 end
-
+ 
 function Window:SetIslandIcon(spec)
 	if self.ui.setIslandIcon then
 		self.ui.setIslandIcon(spec)
@@ -2926,11 +3055,11 @@ function Window:SetIslandIcon(spec)
 		self.ui.islandLayout(true)
 	end
 end
-
+ 
 function Window:SetToggleKey(key)
 	self.cfg.ToggleKey = key
 end
-
+ 
 function Window:SetTheme(t, instant)
 	local th
 	if type(t) == "table" then
@@ -2947,7 +3076,7 @@ function Window:SetTheme(t, instant)
 		m(th.id)
 	end
 end
-
+ 
 function Window:SetBackgroundTransparency(n)
 	local c = self.cfg
 	c.BackgroundTransparency = n
@@ -2955,12 +3084,12 @@ function Window:SetBackgroundTransparency(n)
 	c.CardTransparency = math.clamp(n - 0.04, 0, 1)
 	self:_applyTransparency()
 end
-
+ 
 function Window:SetTransparent(v)
 	self.cfg.Transparent = v and true or false
 	self:_applyTransparency()
 end
-
+ 
 function Window:_applyTransparency()
 	local ui = self.ui
 	tw(ui.main, { BackgroundTransparency = self:_t("bg") }, 0.3)
@@ -2974,7 +3103,7 @@ function Window:_applyTransparency()
 		tw(ui.blur, { Size = self:_blurSize() }, 0.4)
 	end
 end
-
+ 
 function Window:_pulse()
 	if self.destroyed then
 		return
@@ -2988,7 +3117,7 @@ function Window:_pulse()
 		tw(s, { Scale = 1 }, 0.4, Enum.EasingStyle.Back)
 	end)
 end
-
+ 
 function Window:Open()
 	if self.destroyed then
 		return
@@ -3013,7 +3142,7 @@ function Window:Open()
 	self:_pulse()
 	self:_refresh("enter")
 end
-
+ 
 function Window:Close()
 	if self.destroyed then
 		return
@@ -3038,7 +3167,7 @@ function Window:Close()
 		end
 	end)
 end
-
+ 
 function Window:Toggle()
 	if self.isOpen then
 		self:Close()
@@ -3046,7 +3175,7 @@ function Window:Toggle()
 		self:Open()
 	end
 end
-
+ 
 function Window:ShowDestroyConfirm()
 	if self.destroyed then
 		return
@@ -3062,7 +3191,7 @@ function Window:ShowDestroyConfirm()
 	tw(ui.confirm.layer, { BackgroundTransparency = 0.55 }, 0.2)
 	tw(ui.confirm.scale, { Scale = 1 }, 0.28, Enum.EasingStyle.Back)
 end
-
+ 
 function Window:Destroy()
 	if self.destroyed then
 		return
@@ -3096,7 +3225,7 @@ function Window:Destroy()
 	end)
 	self.ui = {}
 end
-
+ 
 local function buildShell(W)
 	local ui = W.ui
 	ui.gui = new("ScreenGui", {
@@ -3153,7 +3282,7 @@ local function buildShell(W)
 		}),
 	}, sheen)
 end
-
+ 
 local function attachDrag(W, frame)
 	frame.InputBegan:Connect(function(i)
 		if isPress(i) and not dragFn then
@@ -3167,7 +3296,7 @@ local function attachDrag(W, frame)
 		end
 	end)
 end
-
+ 
 local function attachResize(W, frame, cx, cy)
 	frame.InputBegan:Connect(function(i)
 		if not isPress(i) or dragFn or not W.isOpen or os.clock() < W.settleAt then
@@ -3213,7 +3342,7 @@ local function attachResize(W, frame, cx, cy)
 		end
 	end)
 end
-
+ 
 local function buildHandles(W)
 	W.ui.handles = {}
 	for _, d in ipairs({ { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 } }) do
@@ -3232,7 +3361,7 @@ local function buildHandles(W)
 	end
 	W:_layoutHandles(W.baseScale)
 end
-
+ 
 local function buildSidebar(W)
 	local ui, c = W.ui, W.cfg
 	local sidebar = new("Frame", {
@@ -3258,18 +3387,21 @@ local function buildSidebar(W)
 		}),
 	}, sidebarSheen)
 	ui.sidebar = sidebar
-
+ 
 	local brandSpec = c.WindowIcon
 	if brandSpec == nil then
 		brandSpec = c.Icon
 	end
 	local brandSize = c.WindowIconSize or 26
 	local brandBox, setBrandIcon = makeIconSlot(sidebar, brandSpec, brandSize, T.white, {
+	local brandBox, setBrandIcon, brandRepaint = makeIconSlot(sidebar, brandSpec, brandSize, "text", {
 		Position = UDim2.fromOffset(16, 16),
 	}, "terminal")
 	ui.logo = brandBox
 	ui.brandIcon = brandBox
 	ui.setBrandIcon = setBrandIcon
+	ui.brandRepaint = brandRepaint
+	table.insert(W.themeMarks, brandRepaint)
 	ui.brandTitle = label(sidebar, {
 		Position = UDim2.fromOffset(58, 13),
 		Size = UDim2.fromOffset(136, 20),
@@ -3295,7 +3427,7 @@ local function buildSidebar(W)
 		ui.brandSub.Size = UDim2.fromOffset(math.max(40, 196 - x), 16)
 	end
 	ui.layoutBrand()
-
+ 
 	local searchBox = new("Frame", {
 		Position = UDim2.fromOffset(10, 64),
 		Size = UDim2.fromOffset(190, 40),
@@ -3334,7 +3466,7 @@ local function buildSidebar(W)
 		W.query = ui.searchInput.Text
 		W:_refresh("enter")
 	end)
-
+ 
 	ui.navTitle = label(sidebar, {
 		Position = UDim2.fromOffset(24, 114),
 		Size = UDim2.fromOffset(160, 22),
@@ -3365,7 +3497,7 @@ local function buildSidebar(W)
 		BorderSizePixel = 0,
 	}, ui.navHolder)
 	round(ui.indicator, 6)
-
+ 
 	if c.ShowProfile then
 		local plate = new("Frame", {
 			Position = UDim2.fromOffset(10, 468),
@@ -3445,7 +3577,7 @@ local function buildSidebar(W)
 			eyeOff = eyeOff,
 		}
 	end
-
+ 
 	local corner = new("Frame", {
 		Size = UDim2.fromOffset(232, 70),
 		BackgroundTransparency = 1,
@@ -3454,7 +3586,7 @@ local function buildSidebar(W)
 	}, ui.main)
 	attachDrag(W, corner)
 end
-
+ 
 local function buildContent(W)
 	local ui, c = W.ui, W.cfg
 	local content = new("Frame", {
@@ -3477,7 +3609,7 @@ local function buildContent(W)
 		TextTruncate = Enum.TextTruncate.AtEnd,
 	})
 	attachDrag(W, header)
-
+ 
 	local minimize = new("TextButton", {
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -64, 0.5, 0),
@@ -3504,7 +3636,7 @@ local function buildContent(W)
 	minimize.MouseButton1Click:Connect(function()
 		W:Close()
 	end)
-
+ 
 	local destroyBtn = new("TextButton", {
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, -22, 0.5, 0),
@@ -3531,7 +3663,7 @@ local function buildContent(W)
 	destroyBtn.MouseButton1Click:Connect(function()
 		W:ShowDestroyConfirm()
 	end)
-
+ 
 	ui.headerLine = new("Frame", {
 		Position = UDim2.fromOffset(0, 66),
 		Size = UDim2.fromOffset(696, 1),
@@ -3539,7 +3671,7 @@ local function buildContent(W)
 		BackgroundTransparency = 0.94,
 		BorderSizePixel = 0,
 	}, content)
-
+ 
 	ui.scroll = new("ScrollingFrame", {
 		Position = UDim2.fromOffset(8, 80),
 		Size = UDim2.fromOffset(692, 472),
@@ -3554,7 +3686,7 @@ local function buildContent(W)
 	scrollLock = function(v)
 		ui.scroll.ScrollingEnabled = v
 	end
-
+ 
 	ui.grid = new("Frame", {
 		Size = UDim2.fromOffset(684, 0),
 		BackgroundTransparency = 1,
@@ -3562,7 +3694,7 @@ local function buildContent(W)
 	}, ui.scroll)
 	ui.gridScale = new("UIScale", { Scale = 1 }, ui.grid)
 end
-
+ 
 local function buildConfirm(W)
 	local ui, S = W.ui, W.S
 	local layer = new("Frame", {
@@ -3677,7 +3809,7 @@ local function buildConfirm(W)
 	end)
 	ui.confirm = { layer = layer, panel = panel, scale = panelScale, open = false }
 end
-
+ 
 local function buildIsland(W)
 	local ui, c = W.ui, W.cfg
 	local ic = c.Island
@@ -3703,7 +3835,7 @@ local function buildIsland(W)
 		ZIndex = 51,
 	}, island)
 	round(ui.islandDot, 4)
-
+ 
 	local function mkLabel(text, bold)
 		return label(island, {
 			Size = UDim2.fromOffset(40, 34),
@@ -3715,18 +3847,23 @@ local function buildIsland(W)
 			ZIndex = 51,
 		})
 	end
-
+ 
 	local segs = {}
 	local islandSpec = c.IslandIcon or "terminal"
 	local titleIcon, setIslandIcon = makeIconSlot(island, islandSpec, c.IslandIconSize or 14, T.accent2, { ZIndex = 51 }, "terminal")
+	local titleIcon, setIslandIcon, islandRepaint = makeIconSlot(island, islandSpec, c.IslandIconSize or 14, "accent2", { ZIndex = 51 }, "terminal")
 	ui.islandIcon = titleIcon
 	ui.setIslandIcon = setIslandIcon
+	ui.islandRepaint = islandRepaint
+	table.insert(W.themeMarks, islandRepaint)
 	ui.islandTitleLabel = mkLabel(W.islandTitle, true)
 	table.insert(segs, { icon = titleIcon, label = ui.islandTitleLabel, maxW = 110, show = true, font = Enum.Font.GothamBold })
-
+ 
 	local userIcon = makeIcon(island, "user", 14, T.text, { ZIndex = 51 })
+	local userIcon = makeIcon(island, "user", 14, "text", { ZIndex = 51 })
 	local playerLbl = mkLabel(lp.DisplayName, false)
 	local islandEye = makeIcon(playerLbl, "eye-off", 14, T.accent2, {
+	local islandEye = makeIcon(playerLbl, "eye-off", 14, "accent2", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 		ZIndex = 52,
@@ -3738,7 +3875,7 @@ local function buildIsland(W)
 	end
 	table.insert(segs, { icon = userIcon, label = playerLbl, maxW = 80, show = ic.ShowUser, font = Enum.Font.GothamMedium })
 	ui.islandPlayer = { label = playerLbl, eye = islandEye }
-
+ 
 	local gameIcon = new("ImageLabel", {
 		Size = UDim2.fromOffset(14, 14),
 		BackgroundColor3 = T.off,
@@ -3749,12 +3886,13 @@ local function buildIsland(W)
 	round(gameIcon, 4)
 	local gameLabel = mkLabel(game.Name, false)
 	table.insert(segs, { icon = gameIcon, label = gameLabel, maxW = 80, show = ic.ShowGame, font = Enum.Font.GothamMedium })
-
+ 
 	local fpsIcon = makeIcon(island, "activity", 14, T.text, { ZIndex = 51 })
+	local fpsIcon = makeIcon(island, "activity", 14, "text", { ZIndex = 51 })
 	local fpsLabel = mkLabel("0 fps", false)
 	table.insert(segs, { icon = fpsIcon, label = fpsLabel, fixedW = 44, show = ic.ShowFPS, font = Enum.Font.GothamMedium })
 	ui.fpsLabel = fpsLabel
-
+ 
 	local seps = {}
 	for i = 1, 3 do
 		seps[i] = label(island, {
@@ -3766,7 +3904,7 @@ local function buildIsland(W)
 			ZIndex = 51,
 		})
 	end
-
+ 
 	ui.islandLayout = function(animate)
 		local function put(o, props)
 			if animate then
@@ -3809,7 +3947,7 @@ local function buildIsland(W)
 		put(island, { Size = UDim2.fromOffset(x + 10, 34) })
 	end
 	ui.islandLayout(false)
-
+ 
 	gameLabel:GetPropertyChangedSignal("Text"):Connect(function()
 		ui.islandLayout(true)
 	end)
@@ -3821,7 +3959,7 @@ local function buildIsland(W)
 			gameLabel.Text = info.Name
 		end
 	end)
-
+ 
 	local btn = new("TextButton", {
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
@@ -3840,7 +3978,7 @@ local function buildIsland(W)
 	end)
 	tw(island, { Position = UDim2.new(0.5, 0, 0, 10) }, 0.7, Enum.EasingStyle.Back)
 end
-
+ 
 function UI:CreateWindow(cfg)
 	if Active then
 		Active:Destroy()
@@ -3893,7 +4031,7 @@ function UI:CreateWindow(cfg)
 	end
 	c.SidebarTransparency = cfg.SidebarTransparency or math.clamp(c.BackgroundTransparency - 0.12, 0, 1)
 	c.CardTransparency = cfg.CardTransparency or math.clamp(c.BackgroundTransparency - 0.04, 0, 1)
-
+ 
 	local base = themeById[c.ThemePreset] or Themes[1]
 	local th = base
 	if type(c.Theme) == "table" then
@@ -3901,13 +4039,13 @@ function UI:CreateWindow(cfg)
 	end
 	currentTheme = th.id
 	applyPalette(th.p, true)
-
+ 
 	saveFolder = c.ConfigFolder
 	saveOn = c.SaveConfig ~= false
 	if saveOn then
 		loadStore(c.ConfigFolder)
 	end
-
+ 
 	local W = setmetatable({
 		cfg = c,
 		S = c.Strings,
@@ -3935,7 +4073,7 @@ function UI:CreateWindow(cfg)
 		islandTitle = cfg.IslandTitle or c.Title,
 	}, Window)
 	Active = W
-
+ 
 	buildShell(W)
 	buildSidebar(W)
 	buildContent(W)
@@ -3945,7 +4083,7 @@ function UI:CreateWindow(cfg)
 	if c.Island.Enabled then
 		buildIsland(W)
 	end
-
+ 
 	local acc, frames = 0, 0
 	W:Connect(RunService.RenderStepped, function(dt)
 		if W.following and W.isOpen then
@@ -3967,7 +4105,7 @@ function UI:CreateWindow(cfg)
 			acc, frames = 0, 0
 		end
 	end)
-
+ 
 	W:Connect(UserInputService.InputChanged, function(i)
 		if not dragFn then
 			return
@@ -3980,7 +4118,7 @@ function UI:CreateWindow(cfg)
 			dragFn(i.Position)
 		end
 	end)
-
+ 
 	W:Connect(UserInputService.InputEnded, function(i)
 		if not dragInput then
 			return
@@ -3993,7 +4131,7 @@ function UI:CreateWindow(cfg)
 			endDrag()
 		end
 	end)
-
+ 
 	W:Connect(UserInputService.InputBegan, function(i, gp)
 		if W.listening and i.UserInputType == Enum.UserInputType.Keyboard then
 			local f = W.listening
@@ -4016,7 +4154,7 @@ function UI:CreateWindow(cfg)
 			end
 		end
 	end)
-
+ 
 	W:Connect(W.ui.gui:GetPropertyChangedSignal("AbsoluteSize"), function()
 		if W.resizing then
 			return
@@ -4031,7 +4169,7 @@ function UI:CreateWindow(cfg)
 			tw(W.ui.scale, { Scale = sc }, 0.25)
 		end
 	end)
-
+ 
 	if c.AutoOpen then
 		task.delay(0.5, function()
 			if Active == W and not W.isOpen then
@@ -4039,8 +4177,8 @@ function UI:CreateWindow(cfg)
 			end
 		end)
 	end
-
+ 
 	return W
 end
-
+ 
 return UI
