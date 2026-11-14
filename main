@@ -3873,16 +3873,16 @@ function UI:CreateWindow(cfg)
 		c.Island[k] = v
 	end
 	c.Strings = {
-		Search = "搜索模块",
-		NavTitle = "模块分类",
-		ModuleCount = "%d 个模块",
-		SearchResult = "搜索结果",
-		Enabled = "已启用 %d 个模块",
+		Search = "search function",
+		NavTitle = "function classify",
+		ModuleCount = "%d function",
+		SearchResult = "searchresult",
+		Enabled = "already run %d function",
 		None = "None",
-		Run = "执行",
-		DestroyTitle = "你真的要销毁 UI 吗？",
-		DestroyYes = "是的",
-		DestroyNo = "不是",
+		Run = "run",
+		DestroyTitle = "really want destroy ui?",
+		DestroyYes = "yes",
+		DestroyNo = "no",
 	}
 	for k, v in pairs(cfg.Strings or {}) do
 		c.Strings[k] = v
