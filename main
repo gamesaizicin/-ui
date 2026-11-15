@@ -763,7 +763,15 @@ local function newGroup(W, page, opts)
 	local hasToggle = opts.Toggle == true
 	local pinnable = opts.Pin ~= false
 	local hidden = opts.Hidden == true
-	local headH = hidden and 0 or HEAD_H
+	local descW = hasToggle and (CARD_W - 170) or (CARD_W - 110)
+	local descH = 0
+	if desc ~= "" then
+		local okD, szD = pcall(function()
+			return TextService:GetTextSize(desc, 17, Enum.Font.GothamMedium, Vector2.new(descW, 10000))
+		end)
+		descH = (okD and math.ceil(szD.Y) or 22) + 2
+	end
+	local headH = hidden and 0 or math.max(HEAD_H, 51 + descH + 20)
 	local modKey = page.name .. ":" .. name
 	local ms = store.modules[modKey]
 	if type(ms) ~= "table" then
@@ -875,11 +883,12 @@ local function newGroup(W, page, opts)
 		if desc ~= "" then
 			label(card, {
 				Position = UDim2.fromOffset(18, 51),
-				Size = UDim2.fromOffset(textW, 22),
+				Size = UDim2.fromOffset(textW, descH),
 				Text = desc,
-				TextSize = 16,
+				TextSize = 17,
 				TextColor3 = T.sub,
-				TextTruncate = Enum.TextTruncate.AtEnd,
+				TextWrapped = true,
+				TextYAlignment = Enum.TextYAlignment.Top,
 			})
 		end
 
@@ -1065,7 +1074,7 @@ local function newGroup(W, page, opts)
 		label(row, {
 			Size = UDim2.fromOffset(204, 36),
 			Text = o.Name or "Toggle",
-			TextSize = 15,
+			TextSize = 16,
 			TextColor3 = T.sub,
 		})
 		local tr, set = buildSwitch(row, 50, 28)
@@ -1120,7 +1129,7 @@ local function newGroup(W, page, opts)
 		label(row, {
 			Size = UDim2.fromOffset(184, 22),
 			Text = o.Name or "Slider",
-			TextSize = 15,
+			TextSize = 16,
 			TextColor3 = T.sub,
 		})
 		local valueLbl = label(row, {
@@ -1255,7 +1264,7 @@ local function newGroup(W, page, opts)
 			Position = UDim2.fromOffset(12, 0),
 			Size = UDim2.fromOffset(120, 44),
 			Text = o.Name or "Dropdown",
-			TextSize = 15,
+			TextSize = 16,
 			TextColor3 = T.sub,
 		})
 		local valueLbl = label(head, {
@@ -1480,9 +1489,9 @@ local function newGroup(W, page, opts)
 		stroke(head, T.white, 0.92)
 		label(head, {
 			Position = UDim2.fromOffset(12, 0),
-			Size = UDim2.fromOffset(90, 44),
+			Size = UDim2.fromOffset(100, 44),
 			Text = o.Name or "MultiDropdown",
-			TextSize = 15,
+			TextSize = 16,
 			TextColor3 = T.sub,
 		})
 		local summary = label(head, {
@@ -1737,7 +1746,7 @@ local function newGroup(W, page, opts)
 		label(head, {
 			Size = UDim2.fromOffset(180, 38),
 			Text = o.Name or "ColorPicker",
-			TextSize = 15,
+			TextSize = 16,
 			TextColor3 = T.sub,
 		})
 		local swatch = new("Frame", {
@@ -1873,7 +1882,7 @@ local function newGroup(W, page, opts)
 		label(row, {
 			Size = UDim2.fromOffset(160, 36),
 			Text = o.Name or "Keybind",
-			TextSize = 15,
+			TextSize = 16,
 			TextColor3 = T.sub,
 		})
 		local key = ctlKey(o.Flag or o.Name or "Keybind")
@@ -1949,24 +1958,32 @@ local function newGroup(W, page, opts)
 		o = o or {}
 		local desc = o.Description or o.Desc or ""
 		local caption = tostring(o.Text or o.ButtonText or W.S.Run)
-		local rowH = desc == "" and 36 or 54
+		local descH = 0
+		if desc ~= "" then
+			local okD, szD = pcall(function()
+				return TextService:GetTextSize(desc, 14, Enum.Font.GothamMedium, Vector2.new(204, 10000))
+			end)
+			descH = (okD and math.ceil(szD.Y) or 18) + 2
+		end
+		local rowH = desc == "" and 36 or math.max(54, 29 + descH + 8)
 		local row = newRow()
 		addControl(row, rowH)
 		label(row, {
 			Position = UDim2.fromOffset(0, desc == "" and 0 or 5),
 			Size = UDim2.fromOffset(204, desc == "" and 36 or 24),
 			Text = o.Name or "Button",
-			TextSize = 15,
+			TextSize = 16,
 			TextColor3 = T.sub,
 		})
 		if desc ~= "" then
 			label(row, {
 				Position = UDim2.fromOffset(0, 29),
-				Size = UDim2.fromOffset(204, 20),
+				Size = UDim2.fromOffset(204, descH),
 				Text = desc,
-				TextSize = 13,
+				TextSize = 14,
 				TextColor3 = T.dim,
-				TextTruncate = Enum.TextTruncate.AtEnd,
+				TextWrapped = true,
+				TextYAlignment = Enum.TextYAlignment.Top,
 			})
 		end
 		local function fitWidth(text)
@@ -2067,7 +2084,7 @@ local function newGroup(W, page, opts)
 		label(row, {
 			Size = UDim2.fromOffset(100, 44),
 			Text = o.Name or "TextBox",
-			TextSize = 15,
+			TextSize = 16,
 			TextColor3 = T.sub,
 		})
 		local field = new("Frame", {
@@ -2417,15 +2434,24 @@ function Page:AddMainButton(opts)
 	local W = self.win
 	local name = opts.Name or "Button"
 	local desc = opts.Description or ""
-	local g = { page = self, name = name, desc = desc, enabled = false, pinned = false, controls = {}, h = 64, fixed = true }
+	local descW = CARD_W - 110
+	local descH = 0
+	if desc ~= "" then
+		local okD, szD = pcall(function()
+			return TextService:GetTextSize(desc, 13, Enum.Font.GothamMedium, Vector2.new(descW, 10000))
+		end)
+		descH = (okD and math.ceil(szD.Y) or 16) + 2
+	end
+	local cardH = desc == "" and 64 or math.max(64, 33 + descH + 12)
+	local g = { page = self, name = name, desc = desc, enabled = false, pinned = false, controls = {}, h = cardH, fixed = true }
 	local slot = new("Frame", {
-		Size = UDim2.fromOffset(CARD_W, 68),
+		Size = UDim2.fromOffset(CARD_W, cardH + 4),
 		BackgroundTransparency = 1,
 		Visible = false,
 	}, W.ui.grid or W.ui.scroll)
 	g.slot = slot
 	local card = new("TextButton", {
-		Size = UDim2.fromOffset(CARD_W, 64),
+		Size = UDim2.fromOffset(CARD_W, cardH),
 		BackgroundColor3 = T.selected,
 		BackgroundTransparency = 0.04,
 		AutoButtonColor = false,
@@ -2453,7 +2479,7 @@ function Page:AddMainButton(opts)
 	round(flash, 12)
 
 	local badge = new("Frame", {
-		Position = UDim2.fromOffset(14, 14),
+		Position = UDim2.fromOffset(14, math.floor((cardH - 36) / 2)),
 		Size = UDim2.fromOffset(36, 36),
 		BackgroundColor3 = T.black,
 		BackgroundTransparency = 0.72,
@@ -2468,7 +2494,7 @@ function Page:AddMainButton(opts)
 
 	local title = label(card, {
 		Position = UDim2.fromOffset(62, desc == "" and 0 or 11),
-		Size = UDim2.fromOffset(CARD_W - 110, desc == "" and 64 or 22),
+		Size = UDim2.fromOffset(CARD_W - 110, desc == "" and cardH or 22),
 		Text = name,
 		Font = Enum.Font.GothamBold,
 		TextSize = 16,
@@ -2478,18 +2504,19 @@ function Page:AddMainButton(opts)
 	if desc ~= "" then
 		label(card, {
 			Position = UDim2.fromOffset(62, 33),
-			Size = UDim2.fromOffset(CARD_W - 110, 18),
+			Size = UDim2.fromOffset(descW, descH),
 			Text = desc,
-			TextSize = 12,
+			TextSize = 13,
 			TextColor3 = T.white,
 			TextTransparency = 0.3,
-			TextTruncate = Enum.TextTruncate.AtEnd,
+			TextWrapped = true,
+			TextYAlignment = Enum.TextYAlignment.Top,
 		})
 	end
 
 	local chev = makeIcon(card, "chevron-right", 18, T.white, {
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromOffset(CARD_W - 28, 32),
+		Position = UDim2.fromOffset(CARD_W - 28, cardH / 2),
 	})
 	fadeIcon(chev, 0.4)
 
@@ -2501,13 +2528,13 @@ function Page:AddMainButton(opts)
 	card.MouseEnter:Connect(function()
 		tw(card, { BackgroundTransparency = 0 }, 0.18)
 		tw(cs, { Transparency = 0.3 }, 0.18)
-		tw(chev, { Position = UDim2.fromOffset(CARD_W - 23, 32) }, 0.22)
+		tw(chev, { Position = UDim2.fromOffset(CARD_W - 23, cardH / 2) }, 0.22)
 		fadeIcon(chev, 0)
 	end)
 	card.MouseLeave:Connect(function()
 		tw(card, { BackgroundTransparency = 0.04 }, 0.18)
 		tw(cs, { Transparency = 0.55 }, 0.18)
-		tw(chev, { Position = UDim2.fromOffset(CARD_W - 28, 32) }, 0.22)
+		tw(chev, { Position = UDim2.fromOffset(CARD_W - 28, cardH / 2) }, 0.22)
 		fadeIcon(chev, 0.4)
 		release()
 	end)
@@ -2547,6 +2574,10 @@ end
 
 function Window:Connect(signal, fn)
 	table.insert(self.conns, signal:Connect(fn))
+end
+
+function Window:_islandShellPos()
+	return UDim2.new(0.5, self.iOff.X, 0, 27 + self.iOff.Y)
 end
 
 function Window:_t(kind)
@@ -2664,8 +2695,8 @@ function Window:_relayout(animate, enter, dur, style, dir)
 		colY[col + 1] += g.h + 14
 		if enter then
 			g.slot.Position = pos + UDim2.fromOffset(0, 22)
-			task.delay((k - 1) * 0.045, function()
-				tw(g.slot, { Position = pos }, 0.55, Enum.EasingStyle.Back)
+			task.delay((k - 1) * (dur and 0.02 or 0.045), function()
+				tw(g.slot, { Position = pos }, dur or 0.55, Enum.EasingStyle.Back)
 			end)
 		elseif animate then
 			tw(g.slot, { Position = pos }, dur or 0.35, style, dir)
@@ -2738,11 +2769,12 @@ function Window:_refresh(mode)
 	for _, g in ipairs(normal) do
 		table.insert(self.ordered, g)
 	end
-	self:_relayout(mode == "move", mode == "enter")
-	if mode == "enter" then
+	local entering = mode == "enter" or mode == "open"
+	self:_relayout(mode == "move", entering, mode == "open" and 0.3 or nil)
+	if entering then
 		ui.scroll.CanvasPosition = Vector2.zero
 		ui.titleLabel.TextTransparency = 1
-		tw(ui.titleLabel, { TextTransparency = 0 }, 0.35)
+		tw(ui.titleLabel, { TextTransparency = 0 }, mode == "open" and 0.2 or 0.35)
 	end
 	ui.titleLabel.Text = q ~= "" and self.S.SearchResult or (self.current and self.current.name or "")
 	local active = q == ""
@@ -2993,21 +3025,18 @@ function Window:Open()
 	self.token += 1
 	self.isOpen = true
 	self.following = false
-	self.settleAt = os.clock() + 0.75
+	self.settleAt = os.clock() + 0.4
 	self.target = self.off
 	self.baseScale = self:_computeScale()
 	self:_layoutHandles(self.baseScale)
-	ui.shell.Position = self.islandPos
+	ui.shell.Position = self:_islandShellPos()
 	ui.scale.Scale = self.baseScale * 0.1
 	ui.main.Visible = true
-	tw(ui.shell, { Position = UDim2.new(0.5, self.off.X, 0.5, self.off.Y) }, 0.6)
-	tw(ui.scale, { Scale = self.baseScale }, 0.65, Enum.EasingStyle.Back)
-	tw(ui.blur, { Size = self:_blurSize() }, 0.6)
-	if ui.islandDot then
-		tw(ui.islandDot, { BackgroundColor3 = T.accent2 }, 0.3)
-	end
+	tw(ui.shell, { Position = UDim2.new(0.5, self.off.X, 0.5, self.off.Y) }, 0.3)
+	tw(ui.scale, { Scale = self.baseScale }, 0.32, Enum.EasingStyle.Back)
+	tw(ui.blur, { Size = self:_blurSize() }, 0.3)
 	self:_pulse()
-	self:_refresh("enter")
+	self:_refresh("open")
 end
 
 function Window:Close()
@@ -3019,16 +3048,13 @@ function Window:Close()
 	local my = self.token
 	self.isOpen = false
 	self.following = false
-	tw(ui.shell, { Position = self.islandPos }, 0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
-	tw(ui.scale, { Scale = self.baseScale * 0.08 }, 0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
-	tw(ui.blur, { Size = 0 }, 0.5)
-	if ui.islandDot then
-		tw(ui.islandDot, { BackgroundColor3 = T.sub }, 0.3)
-	end
-	task.delay(0.45, function()
+	tw(ui.shell, { Position = self:_islandShellPos() }, 0.26, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+	tw(ui.scale, { Scale = self.baseScale * 0.08 }, 0.26, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+	tw(ui.blur, { Size = 0 }, 0.26)
+	task.delay(0.22, function()
 		self:_pulse()
 	end)
-	task.delay(0.52, function()
+	task.delay(0.28, function()
 		if self.token == my then
 			ui.main.Visible = false
 		end
@@ -3077,6 +3103,10 @@ function Window:Destroy()
 		end)
 	end
 	self.conns = {}
+	if self.hpClear then
+		self.hpClear()
+		self.hpClear = nil
+	end
 	dragFn, dragInput, dragEnd = nil, nil, nil
 	scrollLock = function() end
 	self.groups = {}
@@ -3114,7 +3144,7 @@ local function buildShell(W)
 	ui.shell = new("Frame", {
 		Name = "Shell",
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = W.islandPos,
+		Position = W:_islandShellPos(),
 		Size = UDim2.fromOffset(0, 0),
 		BackgroundTransparency = 1,
 	}, ui.gui)
@@ -3267,15 +3297,15 @@ local function buildSidebar(W)
 	ui.brandIcon = brandBox
 	ui.setBrandIcon = setBrandIcon
 	ui.brandTitle = label(sidebar, {
-		Position = UDim2.fromOffset(58, 13),
-		Size = UDim2.fromOffset(136, 20),
+		Position = UDim2.fromOffset(58, 10),
+		Size = UDim2.fromOffset(136, 24),
 		Text = c.Title,
 		Font = Enum.Font.GothamBold,
-		TextSize = 18,
+		TextSize = 20,
 		TextTruncate = Enum.TextTruncate.AtEnd,
 	})
 	ui.brandSub = label(sidebar, {
-		Position = UDim2.fromOffset(58, 33),
+		Position = UDim2.fromOffset(58, 35),
 		Size = UDim2.fromOffset(136, 16),
 		Text = c.Subtitle,
 		TextSize = 13,
@@ -3285,9 +3315,9 @@ local function buildSidebar(W)
 	ui.layoutBrand = function()
 		local w = ui.brandIcon.Size.X.Offset
 		local x = 16 + w + 16
-		ui.brandTitle.Position = UDim2.fromOffset(x, 13)
-		ui.brandTitle.Size = UDim2.fromOffset(math.max(40, 196 - x), 20)
-		ui.brandSub.Position = UDim2.fromOffset(x, 33)
+		ui.brandTitle.Position = UDim2.fromOffset(x, 10)
+		ui.brandTitle.Size = UDim2.fromOffset(math.max(40, 196 - x), 24)
+		ui.brandSub.Position = UDim2.fromOffset(x, 35)
 		ui.brandSub.Size = UDim2.fromOffset(math.max(40, 196 - x), 16)
 	end
 	ui.layoutBrand()
@@ -3674,6 +3704,95 @@ local function buildConfirm(W)
 	ui.confirm = { layer = layer, panel = panel, scale = panelScale, open = false }
 end
 
+local HP_GREEN = Color3.fromRGB(72, 214, 120)
+local HP_ORANGE = Color3.fromRGB(255, 166, 60)
+local HP_RED = Color3.fromRGB(236, 72, 72)
+local HP_DEAD = Color3.fromRGB(112, 116, 128)
+
+local function healthColor(hum)
+	if not hum or hum.Health <= 0 or hum:GetState() == Enum.HumanoidStateType.Dead then
+		return HP_DEAD
+	end
+	local max = hum.MaxHealth
+	local r
+	if max ~= max or max <= 0 or max == math.huge then
+		r = 1
+	else
+		r = math.clamp(hum.Health / max, 0, 1)
+	end
+	if r >= 1 then
+		return HP_GREEN
+	end
+	if r > 0.5 then
+		return HP_ORANGE:Lerp(HP_GREEN, (r - 0.5) / 0.5)
+	end
+	if r > 0.2 then
+		return HP_RED:Lerp(HP_ORANGE, (r - 0.2) / 0.3)
+	end
+	return HP_RED
+end
+
+local function bindHealth(W)
+	local dot = W.ui.islandDot
+	local conns = {}
+	local token = 0
+	local function paint(color)
+		if dot.Parent then
+			tw(dot, { BackgroundColor3 = color }, 0.35, Enum.EasingStyle.Quad)
+		end
+	end
+	local function clear()
+		for _, cn in ipairs(conns) do
+			cn:Disconnect()
+		end
+		conns = {}
+	end
+	local function attach(char)
+		token += 1
+		local my = token
+		clear()
+		paint(HP_DEAD)
+		if not char then
+			return
+		end
+		task.spawn(function()
+			local hum = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid", 10)
+			if my ~= token or not hum or not hum.Parent then
+				return
+			end
+			local function update()
+				if my == token then
+					paint(healthColor(hum))
+				end
+			end
+			table.insert(conns, hum.HealthChanged:Connect(update))
+			table.insert(conns, hum:GetPropertyChangedSignal("MaxHealth"):Connect(update))
+			table.insert(conns, hum.Died:Connect(update))
+			table.insert(conns, hum.StateChanged:Connect(update))
+			table.insert(conns, hum.AncestryChanged:Connect(function()
+				if my == token and not hum:IsDescendantOf(game) then
+					attach(lp.Character)
+				end
+			end))
+			update()
+		end)
+	end
+	W.hpClear = clear
+	W:Connect(lp.CharacterAdded, attach)
+	W:Connect(lp.CharacterRemoving, function()
+		attach(nil)
+	end)
+	attach(lp.Character)
+end
+
+local function clampIsland(W, v)
+	local ui = W.ui
+	local g = ui.gui.AbsoluteSize
+	local w = ui.island.AbsoluteSize.X
+	local maxX = math.max(0, g.X / 2 - w / 2 - 6)
+	return Vector2.new(math.clamp(v.X, -maxX, maxX), math.clamp(v.Y, -6, math.max(0, g.Y - 120)))
+end
+
 local function buildIsland(W)
 	local ui, c = W.ui, W.cfg
 	local ic = c.Island
@@ -3694,11 +3813,12 @@ local function buildIsland(W)
 	ui.islandDot = new("Frame", {
 		Position = UDim2.fromOffset(14, 13),
 		Size = UDim2.fromOffset(8, 8),
-		BackgroundColor3 = T.sub,
+		BackgroundColor3 = HP_DEAD,
 		BorderSizePixel = 0,
 		ZIndex = 51,
 	}, island)
 	round(ui.islandDot, 4)
+	bindings[ui.islandDot] = nil
 
 	local function mkLabel(text, bold)
 		return label(island, {
@@ -3831,10 +3951,111 @@ local function buildIsland(W)
 	btn.MouseLeave:Connect(function()
 		tw(ui.islandScale, { Scale = 1 }, 0.25)
 	end)
-	btn.MouseButton1Click:Connect(function()
-		W:Toggle()
+	btn.InputBegan:Connect(function(i)
+		if not isPress(i) or dragFn then
+			return
+		end
+		local start = Vector2.new(i.Position.X, i.Position.Y)
+		local base = W.iTarget
+		local moved = false
+		beginDrag(i, function(p)
+			local d = Vector2.new(p.X, p.Y) - start
+			if not moved and d.Magnitude > 6 then
+				moved = true
+			end
+			if moved then
+				W.iTarget = clampIsland(W, base + d)
+				W.islandActive = true
+			end
+		end, function()
+			if not moved then
+				W:Toggle()
+			end
+		end)
 	end)
+
+	local lineHit = new("Frame", {
+		Name = "IslandHandle",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0, -20),
+		Size = UDim2.fromOffset(100, 22),
+		BackgroundTransparency = 1,
+		Active = true,
+		ZIndex = 55,
+	}, ui.gui)
+	local line = new("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(48, 3),
+		BackgroundColor3 = T.dim,
+		BackgroundTransparency = 0.45,
+		BorderSizePixel = 0,
+		ZIndex = 56,
+	}, lineHit)
+	round(line, 2)
+	ui.islandLine = lineHit
+
+	local function lineRest()
+		tw(line, { Size = UDim2.fromOffset(48, 3), BackgroundColor3 = T.dim, BackgroundTransparency = 0.45 }, 0.25)
+	end
+	local function lineActive()
+		tw(line, { Size = UDim2.fromOffset(60, 3), BackgroundColor3 = T.accent2, BackgroundTransparency = 0.1 }, 0.16)
+	end
+	lineHit.MouseEnter:Connect(lineActive)
+	lineHit.MouseLeave:Connect(function()
+		if not W.lineHeld then
+			lineRest()
+		end
+	end)
+	lineHit.InputBegan:Connect(function(i)
+		if not isPress(i) or dragFn then
+			return
+		end
+		local startY = i.Position.Y
+		local opened = false
+		W.lineHeld = true
+		lineActive()
+		beginDrag(i, function(p)
+			local dy = p.Y - startY
+			W.linePull = math.clamp(dy * 0.6, 0, 34)
+			W.islandActive = true
+			if dy >= 26 and not opened and not W.isOpen then
+				opened = true
+				W:Open()
+			end
+		end, function()
+			W.lineHeld = false
+			W.linePull = 0
+			W.islandActive = true
+			lineRest()
+		end)
+	end)
+
+	ui.islandApply = function()
+		island.Position = UDim2.new(0.5, W.iOff.X, 0, 10 + W.iOff.Y)
+		lineHit.Position = UDim2.new(0.5, W.lineOff.X, 0, 51 + W.lineOff.Y + W.linePullCur)
+	end
+	ui.islandStep = function(dt)
+		local d1 = W.iTarget - W.iOff
+		W.iOff = W.iOff + d1 * (1 - math.exp(-dt * 16))
+		local d2 = W.iOff - W.lineOff
+		W.lineOff = W.lineOff + d2 * (1 - math.exp(-dt * 7))
+		local d3 = W.linePull - W.linePullCur
+		W.linePullCur = W.linePullCur + d3 * (1 - math.exp(-dt * 18))
+		if d1.Magnitude < 0.15 and d2.Magnitude < 0.15 and math.abs(d3) < 0.15 then
+			W.iOff = W.iTarget
+			W.lineOff = W.iOff
+			W.linePullCur = W.linePull
+			W.islandActive = false
+		end
+		ui.islandApply()
+	end
+
 	tw(island, { Position = UDim2.new(0.5, 0, 0, 10) }, 0.7, Enum.EasingStyle.Back)
+	task.delay(0.12, function()
+		tw(lineHit, { Position = UDim2.new(0.5, 0, 0, 51) }, 0.7, Enum.EasingStyle.Back)
+	end)
+	bindHealth(W)
 end
 
 function UI:CreateWindow(cfg)
@@ -3873,16 +4094,16 @@ function UI:CreateWindow(cfg)
 		c.Island[k] = v
 	end
 	c.Strings = {
-		Search = "search function",
-		NavTitle = "function classify",
-		ModuleCount = "%d function",
-		SearchResult = "searchresult",
-		Enabled = "already run %d function",
+		Search = "搜索模块",
+		NavTitle = "模块分类",
+		ModuleCount = "%d 个模块",
+		SearchResult = "搜索结果",
+		Enabled = "已启用 %d 个模块",
 		None = "None",
-		Run = "run",
-		DestroyTitle = "really want destroy ui?",
-		DestroyYes = "yes",
-		DestroyNo = "no",
+		Run = "执行",
+		DestroyTitle = "你真的要销毁 UI 吗？",
+		DestroyYes = "是的",
+		DestroyNo = "不是",
 	}
 	for k, v in pairs(cfg.Strings or {}) do
 		c.Strings[k] = v
@@ -3926,7 +4147,12 @@ function UI:CreateWindow(cfg)
 		designH = 560,
 		off = Vector2.new(0, 0),
 		target = Vector2.new(0, 0),
-		islandPos = UDim2.new(0.5, 0, 0, 27),
+		iOff = Vector2.new(0, 0),
+		iTarget = Vector2.new(0, 0),
+		lineOff = Vector2.new(0, 0),
+		linePull = 0,
+		linePullCur = 0,
+		islandActive = false,
 		islandFollow = cfg.IslandTitle == nil,
 		islandTitle = cfg.IslandTitle or c.Title,
 	}, Window)
@@ -3944,6 +4170,9 @@ function UI:CreateWindow(cfg)
 
 	local acc, frames = 0, 0
 	W:Connect(RunService.RenderStepped, function(dt)
+		if W.islandActive and W.ui.islandStep then
+			W.ui.islandStep(dt)
+		end
 		if W.following and W.isOpen then
 			local d = W.target - W.off
 			if d.Magnitude < 0.2 and not dragFn then
