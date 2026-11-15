@@ -763,7 +763,6 @@ local function newGroup(W, page, opts)
 	local hasToggle = opts.Toggle == true
 	local pinnable = opts.Pin ~= false
 	local hidden = opts.Hidden == true
-	local headH = hidden and 0 or HEAD_H
 	local modKey = page.name .. ":" .. name
 	local ms = store.modules[modKey]
 	if type(ms) ~= "table" then
@@ -796,6 +795,16 @@ local function newGroup(W, page, opts)
 			W.Flags[f] = v
 		end
 	end
+
+	local descFont = 17
+	local descH = 0
+	if desc ~= "" and not hidden then
+		local ok, sz = pcall(function()
+			return TextService:GetTextSize(desc, descFont, Enum.Font.GothamMedium, Vector2.new(CARD_W - 40, 10000))
+		end)
+		descH = ok and math.ceil(sz.Y) or 22
+	end
+	local headH = hidden and 0 or (HEAD_H + math.max(0, descH - 22))
 
 	local g = {
 		page = page,
@@ -875,11 +884,11 @@ local function newGroup(W, page, opts)
 		if desc ~= "" then
 			label(card, {
 				Position = UDim2.fromOffset(18, 51),
-				Size = UDim2.fromOffset(textW, 22),
+				Size = UDim2.fromOffset(CARD_W - 40, math.max(22, descH)),
 				Text = desc,
-				TextSize = 16,
+				TextSize = descFont,
 				TextColor3 = T.sub,
-				TextTruncate = Enum.TextTruncate.AtEnd,
+				TextWrapped = true,
 			})
 		end
 
@@ -1065,7 +1074,7 @@ local function newGroup(W, page, opts)
 		label(row, {
 			Size = UDim2.fromOffset(204, 36),
 			Text = o.Name or "Toggle",
-			TextSize = 15,
+			TextSize = 16,
 			TextColor3 = T.sub,
 		})
 		local tr, set = buildSwitch(row, 50, 28)
@@ -1120,7 +1129,7 @@ local function newGroup(W, page, opts)
 		label(row, {
 			Size = UDim2.fromOffset(184, 22),
 			Text = o.Name or "Slider",
-			TextSize = 15,
+			TextSize = 16,
 			TextColor3 = T.sub,
 		})
 		local valueLbl = label(row, {
@@ -1255,7 +1264,7 @@ local function newGroup(W, page, opts)
 			Position = UDim2.fromOffset(12, 0),
 			Size = UDim2.fromOffset(120, 44),
 			Text = o.Name or "Dropdown",
-			TextSize = 15,
+			TextSize = 16,
 			TextColor3 = T.sub,
 		})
 		local valueLbl = label(head, {
@@ -1482,7 +1491,7 @@ local function newGroup(W, page, opts)
 			Position = UDim2.fromOffset(12, 0),
 			Size = UDim2.fromOffset(90, 44),
 			Text = o.Name or "MultiDropdown",
-			TextSize = 15,
+			TextSize = 16,
 			TextColor3 = T.sub,
 		})
 		local summary = label(head, {
@@ -1737,7 +1746,7 @@ local function newGroup(W, page, opts)
 		label(head, {
 			Size = UDim2.fromOffset(180, 38),
 			Text = o.Name or "ColorPicker",
-			TextSize = 15,
+			TextSize = 16,
 			TextColor3 = T.sub,
 		})
 		local swatch = new("Frame", {
@@ -1873,7 +1882,7 @@ local function newGroup(W, page, opts)
 		label(row, {
 			Size = UDim2.fromOffset(160, 36),
 			Text = o.Name or "Keybind",
-			TextSize = 15,
+			TextSize = 16,
 			TextColor3 = T.sub,
 		})
 		local key = ctlKey(o.Flag or o.Name or "Keybind")
@@ -1956,7 +1965,7 @@ local function newGroup(W, page, opts)
 			Position = UDim2.fromOffset(0, desc == "" and 0 or 5),
 			Size = UDim2.fromOffset(204, desc == "" and 36 or 24),
 			Text = o.Name or "Button",
-			TextSize = 15,
+			TextSize = 16,
 			TextColor3 = T.sub,
 		})
 		if desc ~= "" then
@@ -2067,7 +2076,7 @@ local function newGroup(W, page, opts)
 		label(row, {
 			Size = UDim2.fromOffset(100, 44),
 			Text = o.Name or "TextBox",
-			TextSize = 15,
+			TextSize = 16,
 			TextColor3 = T.sub,
 		})
 		local field = new("Frame", {
@@ -2150,7 +2159,7 @@ local function newGroup(W, page, opts)
 			}
 		end
 		local W2 = CARD_W - 32
-		local textSize = o.TextSize or 15
+		local textSize = o.TextSize or 16
 		local textPos = o.TextPosition or "Bottom"
 		local text = o.Text ~= nil and tostring(o.Text) or ""
 		local row = newRow()
@@ -2365,7 +2374,7 @@ local function newGroup(W, page, opts)
 				Position = UDim2.fromOffset(52, 0),
 				Size = UDim2.fromOffset(chipW - 58, 42),
 				Text = th.name,
-				TextSize = 15,
+				TextSize = 16,
 				TextColor3 = T.dim,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			})
@@ -2417,15 +2426,24 @@ function Page:AddMainButton(opts)
 	local W = self.win
 	local name = opts.Name or "Button"
 	local desc = opts.Description or ""
-	local g = { page = self, name = name, desc = desc, enabled = false, pinned = false, controls = {}, h = 64, fixed = true }
+	local descFont = 13
+	local descH = 0
+	if desc ~= "" then
+		local ok, sz = pcall(function()
+			return TextService:GetTextSize(desc, descFont, Enum.Font.GothamMedium, Vector2.new(CARD_W - 110, 10000))
+		end)
+		descH = ok and math.ceil(sz.Y) or 18
+	end
+	local cardH = desc == "" and 64 or math.max(64, 24 + descH + 18)
+	local g = { page = self, name = name, desc = desc, enabled = false, pinned = false, controls = {}, h = cardH, fixed = true }
 	local slot = new("Frame", {
-		Size = UDim2.fromOffset(CARD_W, 68),
+		Size = UDim2.fromOffset(CARD_W, cardH + 4),
 		BackgroundTransparency = 1,
 		Visible = false,
 	}, W.ui.grid or W.ui.scroll)
 	g.slot = slot
 	local card = new("TextButton", {
-		Size = UDim2.fromOffset(CARD_W, 64),
+		Size = UDim2.fromOffset(CARD_W, cardH),
 		BackgroundColor3 = T.selected,
 		BackgroundTransparency = 0.04,
 		AutoButtonColor = false,
@@ -2453,7 +2471,7 @@ function Page:AddMainButton(opts)
 	round(flash, 12)
 
 	local badge = new("Frame", {
-		Position = UDim2.fromOffset(14, 14),
+		Position = UDim2.fromOffset(14, (cardH - 36) / 2),
 		Size = UDim2.fromOffset(36, 36),
 		BackgroundColor3 = T.black,
 		BackgroundTransparency = 0.72,
@@ -2468,7 +2486,7 @@ function Page:AddMainButton(opts)
 
 	local title = label(card, {
 		Position = UDim2.fromOffset(62, desc == "" and 0 or 11),
-		Size = UDim2.fromOffset(CARD_W - 110, desc == "" and 64 or 22),
+		Size = UDim2.fromOffset(CARD_W - 110, desc == "" and cardH or 22),
 		Text = name,
 		Font = Enum.Font.GothamBold,
 		TextSize = 16,
@@ -2478,18 +2496,18 @@ function Page:AddMainButton(opts)
 	if desc ~= "" then
 		label(card, {
 			Position = UDim2.fromOffset(62, 33),
-			Size = UDim2.fromOffset(CARD_W - 110, 18),
+			Size = UDim2.fromOffset(CARD_W - 110, math.max(18, descH)),
 			Text = desc,
-			TextSize = 12,
+			TextSize = descFont,
 			TextColor3 = T.white,
 			TextTransparency = 0.3,
-			TextTruncate = Enum.TextTruncate.AtEnd,
+			TextWrapped = true,
 		})
 	end
 
 	local chev = makeIcon(card, "chevron-right", 18, T.white, {
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromOffset(CARD_W - 28, 32),
+		Position = UDim2.fromOffset(CARD_W - 28, cardH / 2),
 	})
 	fadeIcon(chev, 0.4)
 
@@ -2501,13 +2519,13 @@ function Page:AddMainButton(opts)
 	card.MouseEnter:Connect(function()
 		tw(card, { BackgroundTransparency = 0 }, 0.18)
 		tw(cs, { Transparency = 0.3 }, 0.18)
-		tw(chev, { Position = UDim2.fromOffset(CARD_W - 23, 32) }, 0.22)
+		tw(chev, { Position = UDim2.fromOffset(CARD_W - 23, cardH / 2) }, 0.22)
 		fadeIcon(chev, 0)
 	end)
 	card.MouseLeave:Connect(function()
 		tw(card, { BackgroundTransparency = 0.04 }, 0.18)
 		tw(cs, { Transparency = 0.55 }, 0.18)
-		tw(chev, { Position = UDim2.fromOffset(CARD_W - 28, 32) }, 0.22)
+		tw(chev, { Position = UDim2.fromOffset(CARD_W - 28, cardH / 2) }, 0.22)
 		fadeIcon(chev, 0.4)
 		release()
 	end)
@@ -2625,7 +2643,7 @@ function Window:_reflow()
 		ui.navScroll.Size = UDim2.fromOffset(190, math.max(80, navH))
 	end
 	if ui.profilePlate then
-		ui.profilePlate.Position = UDim2.fromOffset(10, h - 92)
+		ui.profilePlate.Position = UDim2.fromOffset(10, h - 100)
 	end
 	ui.content.Position = UDim2.fromOffset(232, 0)
 	ui.content.Size = UDim2.fromOffset(w - 232, h)
@@ -2783,6 +2801,7 @@ function Window:AddPage(opts)
 		AutoButtonColor = false,
 		Text = "",
 		BorderSizePixel = 0,
+		ZIndex = 2,
 	}, ui.navHolder)
 	round(b, 6)
 	local icon = makeIcon(b, page.icon, 20, T.icon, {
@@ -2885,9 +2904,9 @@ function Window:SetPlayerHidden(hidden)
 	local ph = self.ui.playerHide
 	if ph then
 		tw(ph.overlay, { BackgroundTransparency = hidden and 0 or 1 }, 0.35)
-tw(ph.avatar, { ImageTransparency = hidden and 1 or 0 }, 0.35)
-tw(ph.nameLabel, { TextTransparency = hidden and 1 or 0 }, 0.35)
-tw(ph.userLabel, { TextTransparency = hidden and 1 or 0 }, 0.35)
+		tw(ph.avatar, { ImageTransparency = hidden and 1 or 0 }, 0.35)
+		tw(ph.nameLabel, { TextTransparency = hidden and 1 or 0 }, 0.35)
+		tw(ph.userLabel, { TextTransparency = hidden and 1 or 0 }, 0.35)
 		tw(ph.eyeOff, { ImageTransparency = hidden and 0 or 1 }, 0.35)
 		local g = ph.eyeOff:FindFirstChild("G")
 		if g then
@@ -2985,6 +3004,14 @@ function Window:_pulse()
 	end)
 end
 
+function Window:_islandWorld()
+	local ui = self.ui
+	if ui.island then
+		return UDim2.new(ui.island.Position.X.Scale, ui.island.Position.X.Offset, ui.island.Position.Y.Scale, ui.island.Position.Y.Offset)
+	end
+	return self.islandPos
+end
+
 function Window:Open()
 	if self.destroyed then
 		return
@@ -2993,19 +3020,17 @@ function Window:Open()
 	self.token += 1
 	self.isOpen = true
 	self.following = false
-	self.settleAt = os.clock() + 0.75
+	self.settleAt = os.clock() + 0.45
 	self.target = self.off
 	self.baseScale = self:_computeScale()
 	self:_layoutHandles(self.baseScale)
-	ui.shell.Position = self.islandPos
+	local ip = self:_islandWorld()
+	ui.shell.Position = ip
 	ui.scale.Scale = self.baseScale * 0.1
 	ui.main.Visible = true
-	tw(ui.shell, { Position = UDim2.new(0.5, self.off.X, 0.5, self.off.Y) }, 0.6)
-	tw(ui.scale, { Scale = self.baseScale }, 0.65, Enum.EasingStyle.Back)
-	tw(ui.blur, { Size = self:_blurSize() }, 0.6)
-	if ui.islandDot then
-		tw(ui.islandDot, { BackgroundColor3 = T.accent2 }, 0.3)
-	end
+	tw(ui.shell, { Position = UDim2.new(0.5, self.off.X, 0.5, self.off.Y) }, 0.32)
+	tw(ui.scale, { Scale = self.baseScale }, 0.36, Enum.EasingStyle.Back)
+	tw(ui.blur, { Size = self:_blurSize() }, 0.32)
 	self:_pulse()
 	self:_refresh("enter")
 end
@@ -3019,16 +3044,14 @@ function Window:Close()
 	local my = self.token
 	self.isOpen = false
 	self.following = false
-	tw(ui.shell, { Position = self.islandPos }, 0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
-	tw(ui.scale, { Scale = self.baseScale * 0.08 }, 0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
-	tw(ui.blur, { Size = 0 }, 0.5)
-	if ui.islandDot then
-		tw(ui.islandDot, { BackgroundColor3 = T.sub }, 0.3)
-	end
-	task.delay(0.45, function()
+	local ip = self:_islandWorld()
+	tw(ui.shell, { Position = ip }, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+	tw(ui.scale, { Scale = self.baseScale * 0.08 }, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+	tw(ui.blur, { Size = 0 }, 0.28)
+	task.delay(0.24, function()
 		self:_pulse()
 	end)
-	task.delay(0.52, function()
+	task.delay(0.3, function()
 		if self.token == my then
 			ui.main.Visible = false
 		end
@@ -3066,10 +3089,21 @@ function Window:Destroy()
 	self.destroyed = true
 	self.isOpen = false
 	self.following = false
+	self.islandFollowing = false
 	self.listening = nil
 	self.token += 1
 	if Active == self then
 		Active = nil
+	end
+	if self.followConn then
+		pcall(function() self.followConn:Disconnect() end)
+		self.followConn = nil
+	end
+	if self.healthConns then
+		for _, c in ipairs(self.healthConns) do
+			pcall(function() c:Disconnect() end)
+		end
+		self.healthConns = nil
 	end
 	for _, cn in ipairs(self.conns) do
 		pcall(function()
@@ -3152,7 +3186,7 @@ end
 
 local function attachDrag(W, frame)
 	frame.InputBegan:Connect(function(i)
-		if isPress(i) and not dragFn then
+		if isPress(i) and not dragFn and W.isOpen and os.clock() >= W.settleAt then
 			local start = W.target
 			local startInput = i.Position
 			W.following = true
@@ -3271,7 +3305,7 @@ local function buildSidebar(W)
 		Size = UDim2.fromOffset(136, 20),
 		Text = c.Title,
 		Font = Enum.Font.GothamBold,
-		TextSize = 18,
+		TextSize = 20,
 		TextTruncate = Enum.TextTruncate.AtEnd,
 	})
 	ui.brandSub = label(sidebar, {
@@ -3286,8 +3320,8 @@ local function buildSidebar(W)
 		local w = ui.brandIcon.Size.X.Offset
 		local x = 16 + w + 16
 		ui.brandTitle.Position = UDim2.fromOffset(x, 13)
-		ui.brandTitle.Size = UDim2.fromOffset(math.max(40, 196 - x), 20)
-		ui.brandSub.Position = UDim2.fromOffset(x, 33)
+		ui.brandTitle.Size = UDim2.fromOffset(math.max(40, 196 - x), 22)
+		ui.brandSub.Position = UDim2.fromOffset(x, 35)
 		ui.brandSub.Size = UDim2.fromOffset(math.max(40, 196 - x), 16)
 	end
 	ui.layoutBrand()
@@ -3328,127 +3362,123 @@ local function buildSidebar(W)
 	end)
 	ui.searchInput:GetPropertyChangedSignal("Text"):Connect(function()
 		W.query = ui.searchInput.Text
-		W:_refresh("enter")
+		W:_refresh("move")
 	end)
 
-	ui.navTitle = label(sidebar, {
-		Position = UDim2.fromOffset(24, 114),
-		Size = UDim2.fromOffset(160, 22),
-		Text = W.S.NavTitle,
-		TextSize = 12,
-		TextColor3 = T.sub,
-		Visible = W.S.NavTitle ~= "",
-	})
-	ui.navScroll = new("ScrollingFrame", {
-		Position = UDim2.fromOffset(10, 140),
-		Size = UDim2.fromOffset(190, c.ShowProfile and 312 or 388),
+	local navScroll = new("ScrollingFrame", {
+		Position = UDim2.fromOffset(10, 112),
+		Size = UDim2.fromOffset(190, 300),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 0,
 		CanvasSize = UDim2.fromOffset(0, 0),
 		ScrollingDirection = Enum.ScrollingDirection.Y,
-		ClipsDescendants = true,
 	}, sidebar)
-	ui.navHolder = new("Frame", {
-		Position = UDim2.fromOffset(6, 0),
+	ui.navScroll = navScroll
+	local navHolder = new("Frame", {
+		Position = UDim2.fromOffset(0, 0),
 		Size = UDim2.fromOffset(178, 0),
 		BackgroundTransparency = 1,
-	}, ui.navScroll)
-	ui.indicator = new("Frame", {
+	}, navScroll)
+	ui.navHolder = navHolder
+	local indicator = new("Frame", {
+		Position = UDim2.fromOffset(0, 0),
 		Size = UDim2.fromOffset(178, 40),
-		BackgroundColor3 = T.selected,
+		BackgroundColor3 = T.accent,
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-	}, ui.navHolder)
-	round(ui.indicator, 6)
+		ZIndex = 1,
+	}, navHolder)
+	round(indicator, 6)
+	ui.indicator = indicator
 
-	if c.ShowProfile then
+	if c.ShowProfile ~= false then
 		local plate = new("Frame", {
-			Position = UDim2.fromOffset(10, 468),
-			Size = UDim2.fromOffset(190, 60),
+			Position = UDim2.fromOffset(10, 450),
+			Size = UDim2.fromOffset(190, 84),
 			BackgroundColor3 = T.card2,
-			BackgroundTransparency = 0.5,
+			BackgroundTransparency = 0.4,
 			BorderSizePixel = 0,
+			ClipsDescendants = true,
 		}, sidebar)
-		ui.profilePlate = plate
 		round(plate, 12)
-		stroke(plate, T.white, 0.94)
+		stroke(plate, T.white, 0.9)
+		ui.profilePlate = plate
+
 		local avatar = new("ImageLabel", {
-			Position = UDim2.fromOffset(10, 10),
-			Size = UDim2.fromOffset(40, 40),
+			Position = UDim2.fromOffset(10, 12),
+			Size = UDim2.fromOffset(60, 60),
 			BackgroundColor3 = T.off,
 			BorderSizePixel = 0,
-			Image = "",
 		}, plate)
-		round(avatar, 8)
-		task.spawn(function()
-			local ok, img = pcall(function()
-				return Players:GetUserThumbnailAsync(lp.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
-			end)
-			if ok and img and avatar.Parent then
-				avatar.Image = img
-			end
+		round(avatar, 30)
+		local okThumb, thumbUrl = pcall(function()
+			return Players:GetUserThumbnailAsync(lp.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
 		end)
-		local displayNameLbl = label(plate, {
-			Position = UDim2.fromOffset(60, 11),
-			Size = UDim2.fromOffset(122, 18),
+		if okThumb and thumbUrl then
+			avatar.Image = thumbUrl
+		end
+
+		local nameLabel = label(plate, {
+			Position = UDim2.fromOffset(78, 16),
+			Size = UDim2.fromOffset(102, 20),
 			Text = lp.DisplayName,
 			Font = Enum.Font.GothamBold,
 			TextSize = 14,
+			TextColor3 = T.text,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
-		local userLbl = label(plate, {
-			Position = UDim2.fromOffset(60, 31),
-			Size = UDim2.fromOffset(122, 16),
+		local userLabel = label(plate, {
+			Position = UDim2.fromOffset(78, 36),
+			Size = UDim2.fromOffset(102, 16),
 			Text = "@" .. lp.Name,
 			TextSize = 12,
 			TextColor3 = T.sub,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 		})
-		local overlay = new("Frame", {
-			Size = UDim2.fromScale(1, 1),
-			BackgroundColor3 = T.card2,
-			BackgroundTransparency = 1,
-			BorderSizePixel = 0,
-			ZIndex = 5,
-		}, plate)
-		round(overlay, 12)
-		local eyeOff = makeIcon(overlay, "eye-off", 18, T.accent2, {
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromScale(0.5, 0.5),
-			ZIndex = 6,
-		})
-		eyeOff.ImageTransparency = 1
-		local eg = eyeOff:FindFirstChild("G")
-		if eg then
-			eg.TextTransparency = 1
-		end
-		local hit = new("TextButton", {
-			Size = UDim2.fromScale(1, 1),
+
+		local eyeBtn = new("TextButton", {
+			Position = UDim2.fromOffset(78, 56),
+			Size = UDim2.fromOffset(60, 18),
 			BackgroundTransparency = 1,
 			Text = "",
 			AutoButtonColor = false,
-			ZIndex = 10,
 		}, plate)
-		hit.Activated:Connect(function()
+		local eye = makeIcon(eyeBtn, "eye", 14, T.icon, {
+			AnchorPoint = Vector2.new(0, 0.5),
+			Position = UDim2.new(0, 0, 0.5, 0),
+		})
+		local eyeOff = makeIcon(eyeBtn, "x", 14, T.icon, {
+			AnchorPoint = Vector2.new(0, 0.5),
+			Position = UDim2.new(0, 0, 0.5, 0),
+			ImageTransparency = 1,
+		})
+		local eyeOffG = eyeOff:FindFirstChild("G")
+		if eyeOffG then
+			eyeOffG.TextTransparency = 1
+		end
+		local overlay = new("Frame", {
+			Size = UDim2.fromScale(1, 1),
+			BackgroundColor3 = T.bg,
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			ZIndex = 6,
+		}, plate)
+		round(overlay, 12)
+		eyeBtn.MouseButton1Click:Connect(function()
 			W:SetPlayerHidden(not W.playerHidden)
 		end)
 		ui.playerHide = {
 			overlay = overlay,
 			avatar = avatar,
-			nameLabel = displayNameLbl,
-			userLabel = userLbl,
+			nameLabel = nameLabel,
+			userLabel = userLabel,
 			eyeOff = eyeOff,
 		}
 	end
 
-	local corner = new("Frame", {
-		Size = UDim2.fromOffset(232, 70),
-		BackgroundTransparency = 1,
-		Active = true,
-		ZIndex = 5,
-	}, ui.main)
-	attachDrag(W, corner)
+	local navBottom = navScroll.Position.Y.Offset + navScroll.Size.Y.Offset
+	navScroll.Size = UDim2.fromOffset(190, math.max(80, 540 - 120 - 100))
 end
 
 local function buildContent(W)
@@ -3459,583 +3489,516 @@ local function buildContent(W)
 		BackgroundTransparency = 1,
 	}, ui.main)
 	ui.content = content
+
 	local header = new("Frame", {
+		Position = UDim2.fromOffset(0, 0),
 		Size = UDim2.fromOffset(708, 66),
 		BackgroundTransparency = 1,
+		Active = true,
 	}, content)
 	ui.header = header
+
 	ui.titleLabel = label(header, {
-		Position = UDim2.fromOffset(18, 0),
-		Size = UDim2.fromOffset(320, 66),
+		Position = UDim2.fromOffset(18, 18),
+		Size = UDim2.fromOffset(400, 30),
 		Text = "",
 		Font = Enum.Font.GothamBold,
-		TextSize = 26,
-		TextTruncate = Enum.TextTruncate.AtEnd,
+		TextSize = 22,
+		TextColor3 = T.text,
 	})
-	attachDrag(W, header)
 
-	local minimize = new("TextButton", {
+	local closeBtn = new("TextButton", {
 		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -64, 0.5, 0),
-		Size = UDim2.fromOffset(36, 36),
-		BackgroundColor3 = T.white,
-		BackgroundTransparency = 1,
+		Position = UDim2.new(1, -18, 0.5, 0),
+		Size = UDim2.fromOffset(32, 32),
+		BackgroundColor3 = T.card2,
+		BackgroundTransparency = 0.5,
 		AutoButtonColor = false,
 		Text = "",
 		BorderSizePixel = 0,
 	}, header)
-	round(minimize, 6)
-	local minIcon = makeIcon(minimize, "minus", 16, T.icon, {
+	round(closeBtn, 8)
+	local closeIcon = makeIcon(closeBtn, "x", 16, T.icon, {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
 	})
-	minimize.MouseEnter:Connect(function()
-		tw(minimize, { BackgroundTransparency = 0.88 })
-		tint(minIcon, T.white)
+	closeBtn.MouseEnter:Connect(function()
+		tw(closeBtn, { BackgroundTransparency = 0.2 }, 0.15)
+		tint(closeIcon, T.white)
 	end)
-	minimize.MouseLeave:Connect(function()
-		tw(minimize, { BackgroundTransparency = 1 })
-		tint(minIcon, T.icon)
+	closeBtn.MouseLeave:Connect(function()
+		tw(closeBtn, { BackgroundTransparency = 0.5 }, 0.15)
+		tint(closeIcon, T.icon)
 	end)
-	minimize.MouseButton1Click:Connect(function()
+	closeBtn.MouseButton1Click:Connect(function()
 		W:Close()
 	end)
 
-	local destroyBtn = new("TextButton", {
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -22, 0.5, 0),
-		Size = UDim2.fromOffset(36, 36),
-		BackgroundColor3 = T.white,
-		BackgroundTransparency = 1,
-		AutoButtonColor = false,
-		Text = "",
-		BorderSizePixel = 0,
-	}, header)
-	round(destroyBtn, 6)
-	local destroyIcon = makeIcon(destroyBtn, "x", 16, T.icon, {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-	})
-	destroyBtn.MouseEnter:Connect(function()
-		tw(destroyBtn, { BackgroundTransparency = 0.88 })
-		tint(destroyIcon, T.white)
-	end)
-	destroyBtn.MouseLeave:Connect(function()
-		tw(destroyBtn, { BackgroundTransparency = 1 })
-		tint(destroyIcon, T.icon)
-	end)
-	destroyBtn.MouseButton1Click:Connect(function()
-		W:ShowDestroyConfirm()
-	end)
-
-	ui.headerLine = new("Frame", {
-		Position = UDim2.fromOffset(0, 66),
+	local headerLine = new("Frame", {
+		Position = UDim2.fromOffset(12, 66),
 		Size = UDim2.fromOffset(696, 1),
 		BackgroundColor3 = T.white,
-		BackgroundTransparency = 0.94,
+		BackgroundTransparency = 0.9,
 		BorderSizePixel = 0,
 	}, content)
+	ui.headerLine = headerLine
 
-	ui.scroll = new("ScrollingFrame", {
-		Position = UDim2.fromOffset(8, 80),
+	local scroll = new("ScrollingFrame", {
+		Position = UDim2.fromOffset(10, 80),
 		Size = UDim2.fromOffset(692, 472),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-		ScrollBarThickness = 3,
-		ScrollBarImageColor3 = T.accent2,
+		ScrollBarThickness = 2,
+		ScrollBarImageColor3 = T.off,
 		CanvasSize = UDim2.fromOffset(0, 0),
 		ScrollingDirection = Enum.ScrollingDirection.Y,
-		ClipsDescendants = true,
 	}, content)
-	scrollLock = function(v)
-		ui.scroll.ScrollingEnabled = v
-	end
+	ui.scroll = scroll
 
-	ui.grid = new("Frame", {
+	local grid = new("Frame", {
+		Position = UDim2.fromOffset(0, 0),
 		Size = UDim2.fromOffset(684, 0),
 		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-	}, ui.scroll)
-	ui.gridScale = new("UIScale", { Scale = 1 }, ui.grid)
-end
+	}, scroll)
+	ui.grid = grid
+	ui.gridScale = new("UIScale", { Scale = 1 }, grid)
 
-local function buildConfirm(W)
-	local ui, S = W.ui, W.S
-	local layer = new("Frame", {
-		Name = "ConfirmLayer",
-		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = T.black,
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		Visible = false,
-		Active = true,
-		ZIndex = 120,
-	}, ui.gui)
-	local panel = new("Frame", {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(320, 164),
-		BackgroundColor3 = T.bg,
-		BackgroundTransparency = 0.02,
-		BorderSizePixel = 0,
-		ZIndex = 121,
-	}, layer)
-	round(panel, 16)
-	stroke(panel, T.edge, 0.72)
-	local panelScale = new("UIScale", { Scale = 0.92 }, panel)
-	local sheen = new("Frame", {
-		Size = UDim2.fromScale(1, 1),
-		BackgroundColor3 = T.white,
-		BackgroundTransparency = 0,
-		BorderSizePixel = 0,
-		ZIndex = 122,
-	}, panel)
-	round(sheen, 16)
-	new("UIGradient", {
-		Rotation = 90,
-		Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0.96),
-			NumberSequenceKeypoint.new(1, 1),
-		}),
-	}, sheen)
-	label(panel, {
-		Position = UDim2.fromOffset(24, 32),
-		Size = UDim2.fromOffset(272, 28),
-		Text = S.DestroyTitle,
-		Font = Enum.Font.GothamBold,
-		TextSize = 17,
-		TextXAlignment = Enum.TextXAlignment.Center,
-		ZIndex = 123,
-	})
-	local yes = new("TextButton", {
-		Position = UDim2.fromOffset(24, 98),
-		Size = UDim2.fromOffset(126, 38),
-		BackgroundColor3 = T.accent,
-		AutoButtonColor = false,
-		Text = S.DestroyYes,
-		Font = Enum.Font.GothamBold,
-		TextSize = 14,
-		TextColor3 = T.white,
-		BorderSizePixel = 0,
-		ZIndex = 123,
-	}, panel)
-	round(yes, 10)
-	local no = new("TextButton", {
-		Position = UDim2.fromOffset(170, 98),
-		Size = UDim2.fromOffset(126, 38),
-		BackgroundColor3 = T.card2,
-		BackgroundTransparency = 0.2,
-		AutoButtonColor = false,
-		Text = S.DestroyNo,
-		Font = Enum.Font.GothamMedium,
-		TextSize = 14,
-		TextColor3 = T.sub,
-		BorderSizePixel = 0,
-		ZIndex = 123,
-	}, panel)
-	round(no, 10)
-	stroke(no, T.white, 0.88)
-	W:Connect(yes.MouseEnter, function()
-		tw(yes, { BackgroundColor3 = T.accent2 }, 0.16)
+	scroll:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+		W:_reflow()
 	end)
-	W:Connect(yes.MouseLeave, function()
-		tw(yes, { BackgroundColor3 = T.accent }, 0.18)
-	end)
-	W:Connect(no.MouseEnter, function()
-		tw(no, { BackgroundTransparency = 0.1 }, 0.16)
-		tw(no, { TextColor3 = T.text }, 0.16)
-	end)
-	W:Connect(no.MouseLeave, function()
-		tw(no, { BackgroundTransparency = 0.2 }, 0.18)
-		tw(no, { TextColor3 = T.sub }, 0.18)
-	end)
-	local function close()
-		if not ui.confirm or not ui.confirm.open then
-			return
-		end
-		ui.confirm.open = false
-		tw(panelScale, { Scale = 0.94 }, 0.16, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
-		tw(layer, { BackgroundTransparency = 1 }, 0.18)
-		task.delay(0.18, function()
-			if ui.confirm and not ui.confirm.open then
-				layer.Visible = false
-			end
-		end)
-	end
-	W:Connect(no.MouseButton1Click, function()
-		close()
-	end)
-	W:Connect(yes.MouseButton1Click, function()
-		close()
-		task.delay(0.1, function()
-			W:Destroy()
-		end)
-	end)
-	ui.confirm = { layer = layer, panel = panel, scale = panelScale, open = false }
+
+	attachDrag(W, header)
 end
 
 local function buildIsland(W)
 	local ui, c = W.ui, W.cfg
-	local ic = c.Island
+	local ip = W.islandPos
 	local island = new("Frame", {
 		Name = "Island",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, -60),
-		Size = UDim2.fromOffset(300, 34),
-		BackgroundColor3 = T.island,
-		BackgroundTransparency = 0.06,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(ip.X.Scale, ip.X.Offset, ip.Y.Scale, ip.Y.Offset),
+		Size = UDim2.fromOffset(130, 34),
+		BackgroundColor3 = T.card,
+		BackgroundTransparency = 0.08,
 		BorderSizePixel = 0,
-		ZIndex = 50,
+		Active = true,
+		ZIndex = 100,
 	}, ui.gui)
 	round(island, 17)
-	stroke(island, T.edge, 0.82, 1)
+	stroke(island, T.edge, 0.6)
 	ui.island = island
-	ui.islandScale = new("UIScale", { Scale = 1 }, island)
-	ui.islandDot = new("Frame", {
-		Position = UDim2.fromOffset(14, 13),
-		Size = UDim2.fromOffset(8, 8),
-		BackgroundColor3 = T.sub,
+	local islandScale = new("UIScale", { Scale = 1 }, island)
+	ui.islandScale = islandScale
+
+	local dot = new("Frame", {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 12, 0.5, 0),
+		Size = UDim2.fromOffset(9, 9),
+		BackgroundColor3 = Color3.fromRGB(90, 200, 100),
 		BorderSizePixel = 0,
-		ZIndex = 51,
 	}, island)
-	round(ui.islandDot, 4)
+	round(dot, 5)
+	ui.islandDot = dot
 
-	local function mkLabel(text, bold)
-		return label(island, {
-			Size = UDim2.fromOffset(40, 34),
-			Text = text,
-			TextSize = 12,
-			Font = bold and Enum.Font.GothamBold or Enum.Font.GothamMedium,
-			TextColor3 = bold and T.accent2 or T.text,
-			TextTruncate = Enum.TextTruncate.AtEnd,
-			ZIndex = 51,
-		})
-	end
-
-	local segs = {}
-	local islandSpec = c.IslandIcon or "terminal"
-	local titleIcon, setIslandIcon = makeIconSlot(island, islandSpec, c.IslandIconSize or 14, "accent2", { ZIndex = 51 }, "terminal")
-	ui.islandIcon = titleIcon
-	ui.setIslandIcon = setIslandIcon
-	ui.islandTitleLabel = mkLabel(W.islandTitle, true)
-	table.insert(segs, { icon = titleIcon, label = ui.islandTitleLabel, maxW = 110, show = true, font = Enum.Font.GothamBold })
-
-	local userIcon = makeIcon(island, "user", 14, T.text, { ZIndex = 51 })
-	local playerLbl = mkLabel(lp.DisplayName, false)
-	local islandEye = makeIcon(playerLbl, "eye-off", 14, T.accent2, {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.5),
-		ZIndex = 52,
+	local titleLabel = label(island, {
+		Position = UDim2.fromOffset(28, 0),
+		Size = UDim2.fromOffset(90, 34),
+		Text = c.Title,
+		Font = Enum.Font.GothamBold,
+		TextSize = 13,
+		TextColor3 = T.text,
+		TextTruncate = Enum.TextTruncate.AtEnd,
 	})
-	islandEye.ImageTransparency = 1
-	local ieg = islandEye:FindFirstChild("G")
-	if ieg then
-		ieg.TextTransparency = 1
-	end
-	table.insert(segs, { icon = userIcon, label = playerLbl, maxW = 80, show = ic.ShowUser, font = Enum.Font.GothamMedium })
-	ui.islandPlayer = { label = playerLbl, eye = islandEye }
+	ui.islandTitleLabel = titleLabel
+	W.islandTitle = c.Title
 
-	local gameIcon = new("ImageLabel", {
-		Size = UDim2.fromOffset(14, 14),
-		BackgroundColor3 = T.off,
-		BorderSizePixel = 0,
-		Image = (game.GameId ~= 0) and ("rbxthumb://type=GameIcon&id=" .. game.GameId .. "&w=150&h=150") or "",
-		ZIndex = 51,
-	}, island)
-	round(gameIcon, 4)
-	local gameLabel = mkLabel(game.Name, false)
-	table.insert(segs, { icon = gameIcon, label = gameLabel, maxW = 80, show = ic.ShowGame, font = Enum.Font.GothamMedium })
-
-	local fpsIcon = makeIcon(island, "activity", 14, T.text, { ZIndex = 51 })
-	local fpsLabel = mkLabel("0 fps", false)
-	table.insert(segs, { icon = fpsIcon, label = fpsLabel, fixedW = 44, show = ic.ShowFPS, font = Enum.Font.GothamMedium })
-	ui.fpsLabel = fpsLabel
-
-	local seps = {}
-	for i = 1, 3 do
-		seps[i] = label(island, {
-			Size = UDim2.fromOffset(6, 34),
-			Text = "·",
-			TextSize = 14,
-			TextColor3 = T.sub,
-			TextXAlignment = Enum.TextXAlignment.Center,
-			ZIndex = 51,
-		})
+	local iconSlot, setIcon = makeIconSlot(island, nil, 16, "accent2", {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 0, 0.5, 0),
+		Visible = false,
+		ZIndex = 2,
+	}, "activity")
+	ui.islandIcon = iconSlot
+	ui.setIslandIcon = function(spec)
+		if spec == nil then
+			iconSlot.Visible = false
+		else
+			iconSlot.Visible = true
+			setIcon(spec)
+		end
 	end
 
 	ui.islandLayout = function(animate)
-		local function put(o, props)
-			if animate then
-				tw(o, props, 0.25)
-			else
-				for k, v in pairs(props) do
-					o[k] = v
-				end
-			end
+		local hasIcon = iconSlot.Visible
+		local iconW = hasIcon and (iconSlot.Size.X.Offset + 6) or 0
+		local tW = math.clamp(math.ceil(titleLabel.TextBounds.X) + 6, 44, 200)
+		local w = 12 + 9 + 10 + iconW + tW + 14
+		if animate then
+			tw(island, { Size = UDim2.fromOffset(w, 34) }, 0.25)
+		else
+			island.Size = UDim2.fromOffset(w, 34)
 		end
-		local x = 28
-		local n = 0
-		local sepIdx = 0
-		for _, s in ipairs(segs) do
-			s.icon.Visible = s.show
-			s.label.Visible = s.show
-			if s.show then
-				n += 1
-				if n > 1 then
-					sepIdx += 1
-					seps[sepIdx].Visible = true
-					put(seps[sepIdx], { Position = UDim2.fromOffset(x + 1, 0) })
-					x += 9
-				end
-				local w = s.fixedW
-				if not w then
-					local tx = TextService:GetTextSize(s.label.Text, 12, s.font, Vector2.new(1000, 34)).X
-					w = math.clamp(math.ceil(tx) + 1, 12, s.maxW)
-				end
-				local iw = s.icon.Size.X.Offset
-				local ih = s.icon.Size.Y.Offset
-				put(s.icon, { Position = UDim2.fromOffset(x, math.floor((34 - ih) / 2)) })
-				put(s.label, { Position = UDim2.fromOffset(x + iw + 4, 0), Size = UDim2.fromOffset(w, 34) })
-				x += iw + 4 + w
-			end
+		if hasIcon then
+			iconSlot.Position = UDim2.new(0, 31, 0.5, 0)
+			titleLabel.Position = UDim2.fromOffset(31 + iconSlot.Size.X.Offset + 6, 0)
+			titleLabel.Size = UDim2.fromOffset(math.max(20, w - titleLabel.Position.X.Offset - 14), 34)
+		else
+			titleLabel.Position = UDim2.fromOffset(28, 0)
+			titleLabel.Size = UDim2.fromOffset(math.max(20, w - 42), 34)
 		end
-		for i = sepIdx + 1, 3 do
-			seps[i].Visible = false
-		end
-		put(island, { Size = UDim2.fromOffset(x + 10, 34) })
 	end
 	ui.islandLayout(false)
 
-	gameLabel:GetPropertyChangedSignal("Text"):Connect(function()
-		ui.islandLayout(true)
-	end)
-	task.spawn(function()
-		local ok, info = pcall(function()
-			return MarketplaceService:GetProductInfo(game.PlaceId)
-		end)
-		if ok and type(info) == "table" and type(info.Name) == "string" and info.Name ~= "" then
-			gameLabel.Text = info.Name
-		end
-	end)
-
-	local btn = new("TextButton", {
-		Size = UDim2.fromScale(1, 1),
+	local islandPlayer = new("Frame", {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(1, -12, 0.5, 0),
+		Size = UDim2.fromOffset(14, 14),
 		BackgroundTransparency = 1,
-		Text = "",
-		AutoButtonColor = false,
-		ZIndex = 60,
+		Visible = false,
 	}, island)
-	btn.MouseEnter:Connect(function()
-		tw(ui.islandScale, { Scale = 1.04 }, 0.2)
-	end)
-	btn.MouseLeave:Connect(function()
-		tw(ui.islandScale, { Scale = 1 }, 0.25)
-	end)
-	btn.MouseButton1Click:Connect(function()
-		W:Toggle()
-	end)
-	tw(island, { Position = UDim2.new(0.5, 0, 0, 10) }, 0.7, Enum.EasingStyle.Back)
-end
+	local ipLabel = label(islandPlayer, {
+		Size = UDim2.fromScale(1, 1),
+		Text = "",
+		TextSize = 11,
+		TextColor3 = T.sub,
+		TextXAlignment = Enum.TextXAlignment.Right,
+	})
+	ui.islandPlayer = { label = ipLabel, eye = makeIcon(islandPlayer, "eye", 12, T.sub, { Size = UDim2.fromScale(1, 1) }) }
 
-function UI:CreateWindow(cfg)
-	if Active then
-		Active:Destroy()
-	end
-	cfg = cfg or {}
-	local c = {
-		Title = "UI Library",
-		Subtitle = "v" .. UI.Version,
-		Icon = "terminal",
-		WindowIcon = nil,
-		WindowIconSize = 26,
-		IslandIcon = "terminal",
-		IslandIconSize = 14,
-		ThemePreset = "graphite",
-		ThemeName = "自定义",
-		Transparent = true,
-		BackgroundTransparency = 0.36,
-		Blur = true,
-		BlurSize = 14,
-		Watermark = false,
-		WatermarkTransparency = 0.5,
-		ToggleKey = Enum.KeyCode.RightShift,
-		Scale = 1,
-		SaveConfig = true,
-		ConfigFolder = "UILib",
-		ShowProfile = true,
-		AutoOpen = true,
-	}
-	for k, v in pairs(cfg) do
-		c[k] = v
-	end
-	c.Island = { Enabled = true, ShowUser = true, ShowGame = true, ShowFPS = true }
-	for k, v in pairs(cfg.Island or {}) do
-		c.Island[k] = v
-	end
-	c.Strings = {
-		Search = "search function",
-		NavTitle = "function classify",
-		ModuleCount = "%d function",
-		SearchResult = "searchresult",
-		Enabled = "already run %d function",
-		None = "None",
-		Run = "run",
-		DestroyTitle = "really want destroy ui?",
-		DestroyYes = "yes",
-		DestroyNo = "no",
-	}
-	for k, v in pairs(cfg.Strings or {}) do
-		c.Strings[k] = v
-	end
-	c.SidebarTransparency = cfg.SidebarTransparency or math.clamp(c.BackgroundTransparency - 0.12, 0, 1)
-	c.CardTransparency = cfg.CardTransparency or math.clamp(c.BackgroundTransparency - 0.04, 0, 1)
+	local line = new("Frame", {
+		Name = "IslandLine",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(ip.X.Scale, ip.X.Offset, ip.Y.Scale, ip.Y.Offset + 26),
+		Size = UDim2.fromOffset(60, 2),
+		BackgroundColor3 = T.sub,
+		BackgroundTransparency = 0.35,
+		BorderSizePixel = 0,
+		ZIndex = 99,
+	}, ui.gui)
+	round(line, 1)
+	ui.islandLine = line
 
-	local base = themeById[c.ThemePreset] or Themes[1]
-	local th = base
-	if type(c.Theme) == "table" then
-		th = UI:RegisterTheme("custom", c.ThemeName, c.Theme, base.id)
-	end
-	currentTheme = th.id
-	applyPalette(th.p, true)
+	W.islandFollowing = false
+	W.islandTarget = UDim2.new(ip.X.Scale, ip.X.Offset, ip.Y.Scale, ip.Y.Offset)
 
-	saveFolder = c.ConfigFolder
-	saveOn = c.SaveConfig ~= false
-	if saveOn then
-		loadStore(c.ConfigFolder)
-	end
-
-	local W = setmetatable({
-		cfg = c,
-		S = c.Strings,
-		Flags = {},
-		pages = {},
-		groups = {},
-		ordered = {},
-		binds = {},
-		conns = {},
-		themeMarks = {},
-		ui = {},
-		playerHidden = false,
-		query = "",
-		isOpen = false,
-		token = 0,
-		following = false,
-		settleAt = 0,
-		resizing = false,
-		designW = 940,
-		designH = 560,
-		off = Vector2.new(0, 0),
-		target = Vector2.new(0, 0),
-		islandPos = UDim2.new(0.5, 0, 0, 27),
-		islandFollow = cfg.IslandTitle == nil,
-		islandTitle = cfg.IslandTitle or c.Title,
-	}, Window)
-	Active = W
-
-	buildShell(W)
-	buildSidebar(W)
-	buildContent(W)
-	buildConfirm(W)
-	buildHandles(W)
-	W:_reflow()
-	if c.Island.Enabled then
-		buildIsland(W)
-	end
-
-	local acc, frames = 0, 0
-	W:Connect(RunService.RenderStepped, function(dt)
-		if W.following and W.isOpen then
-			local d = W.target - W.off
-			if d.Magnitude < 0.2 and not dragFn then
-				W.off = W.target
-				W.following = false
-			else
-				W.off = W.off + d * (1 - math.exp(-dt * 18))
+	local islandMoved = 0
+	island.InputBegan:Connect(function(i)
+		if not isPress(i) or dragFn then
+			return
+		end
+		islandMoved = 0
+		local startOffset = Vector2.new(island.Position.X.Offset, island.Position.Y.Offset)
+		local startInput = i.Position
+		local wasOpen = W.isOpen
+		if not wasOpen then
+			W.islandFollowing = true
+		end
+		beginDrag(i, function(p)
+			local d = p - startInput
+			islandMoved = math.max(islandMoved, d.Magnitude)
+			if not wasOpen then
+				W.islandTarget = UDim2.new(island.Position.X.Scale, startOffset.X + d.X, island.Position.Y.Scale, startOffset.Y + d.Y)
 			end
-			W.ui.shell.Position = UDim2.new(0.5, W.off.X, 0.5, W.off.Y)
-		end
-		acc += dt
-		frames += 1
-		if acc >= 0.5 then
-			if W.ui.fpsLabel and W.cfg.Island.ShowFPS then
-				W.ui.fpsLabel.Text = math.floor(frames / acc + 0.5) .. " fps"
-			end
-			acc, frames = 0, 0
-		end
-	end)
-
-	W:Connect(UserInputService.InputChanged, function(i)
-		if not dragFn then
-			return
-		end
-		if dragInput.UserInputType == Enum.UserInputType.Touch then
-			if i == dragInput then
-				dragFn(i.Position)
-			end
-		elseif i.UserInputType == Enum.UserInputType.MouseMovement then
-			dragFn(i.Position)
-		end
-	end)
-
-	W:Connect(UserInputService.InputEnded, function(i)
-		if not dragInput then
-			return
-		end
-		if dragInput.UserInputType == Enum.UserInputType.Touch then
-			if i == dragInput then
-				endDrag()
-			end
-		elseif dragInput.UserInputType == Enum.UserInputType.MouseButton1 then
-			endDrag()
-		end
-	end)
-
-	W:Connect(UserInputService.InputBegan, function(i, gp)
-		if W.listening and i.UserInputType == Enum.UserInputType.Keyboard then
-			local f = W.listening
-			W.listening = nil
-			f(i.KeyCode)
-			return
-		end
-		if gp then
-			return
-		end
-		if W.cfg.ToggleKey and i.KeyCode == W.cfg.ToggleKey then
-			W:Toggle()
-			return
-		end
-		if i.UserInputType == Enum.UserInputType.Keyboard then
-			for _, b in ipairs(W.binds) do
-				if b.key and b.key == i.KeyCode and b.fire then
-					b.fire()
+		end, function()
+			if islandMoved < 6 then
+				if W.isOpen then
+					W:Close()
+				else
+					W:Open()
 				end
 			end
-		end
+		end)
 	end)
 
-	W:Connect(W.ui.gui:GetPropertyChangedSignal("AbsoluteSize"), function()
-		if W.resizing then
+	local lineStartY
+	line.InputBegan:Connect(function(i)
+		if not isPress(i) or dragFn or W.isOpen then
 			return
 		end
-		local sc = W:_computeScale()
-		if math.abs(sc - W.baseScale) < 0.001 then
-			return
-		end
-		W.baseScale = sc
-		W:_layoutHandles(sc)
-		if W.isOpen then
-			tw(W.ui.scale, { Scale = sc }, 0.25)
-		end
-	end)
-
-	if c.AutoOpen then
-		task.delay(0.5, function()
-			if Active == W and not W.isOpen then
+		lineStartY = i.Position.Y
+		local opened = false
+		beginDrag(i, function(p)
+			local dy = p.Y - lineStartY
+			if not opened and dy > 36 then
+				opened = true
 				W:Open()
 			end
 		end)
-	end
+	end)
+end
 
+local function buildProfile(W)
+end
+
+local function buildConfirm(W)
+	local ui = W.ui
+	local layer = new("TextButton", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = T.black,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		AutoButtonColor = false,
+		Text = "",
+		Visible = false,
+		ZIndex = 200,
+	}, ui.gui)
+	local scale = new("UIScale", { Scale = 1 }, layer)
+	local box = new("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.fromOffset(320, 160),
+		BackgroundColor3 = T.card,
+		BorderSizePixel = 0,
+		ZIndex = 201,
+	}, layer)
+	round(box, 14)
+	stroke(box, T.edge, 0.6)
+	label(box, {
+		Position = UDim2.fromOffset(0, 26),
+		Size = UDim2.fromOffset(320, 24),
+		Text = "Destroy UI?",
+		Font = Enum.Font.GothamBold,
+		TextSize = 17,
+		TextXAlignment = Enum.TextXAlignment.Center,
+	})
+	label(box, {
+		Position = UDim2.fromOffset(0, 56),
+		Size = UDim2.fromOffset(320, 20),
+		Text = "This action cannot be undone.",
+		TextSize = 13,
+		TextColor3 = T.sub,
+		TextXAlignment = Enum.TextXAlignment.Center,
+	})
+	local function confirmBtn(text, x, primary)
+		local b = new("TextButton", {
+			Position = UDim2.fromOffset(x, 100),
+			Size = UDim2.fromOffset(140, 38),
+			BackgroundColor3 = primary and T.accent or T.card2,
+			AutoButtonColor = false,
+			Text = text,
+			Font = Enum.Font.GothamBold,
+			TextSize = 14,
+			TextColor3 = primary and T.white or T.text,
+			BorderSizePixel = 0,
+		}, box)
+		round(b, 10)
+		return b
+	end
+	local cancel = confirmBtn("Cancel", 20, false)
+	local ok = confirmBtn("Confirm", 160, true)
+	cancel.MouseButton1Click:Connect(function()
+		ui.confirm.open = false
+		tw(layer, { BackgroundTransparency = 1 }, 0.2)
+		tw(scale, { Scale = 0.92 }, 0.2, Enum.EasingStyle.Quad)
+		task.delay(0.2, function()
+			layer.Visible = false
+		end)
+	end)
+	ok.MouseButton1Click:Connect(function()
+		W:Destroy()
+	end)
+	ui.confirm = { layer = layer, scale = scale, box = box, open = false }
+end
+
+local function setupHealth(W)
+	local dot = W.ui.islandDot
+	if not dot then
+		return
+	end
+	if W.healthConns then
+		for _, c in ipairs(W.healthConns) do
+			pcall(function() c:Disconnect() end)
+		end
+	end
+	W.healthConns = {}
+	local function push(c)
+		if c then
+			table.insert(W.healthConns, c)
+		end
+	end
+	local function colorFor(h, maxH)
+		if h <= 0 then
+			return Color3.fromRGB(130, 130, 138)
+		end
+		local ratio = math.clamp(h / math.max(1, maxH), 0, 1)
+		local green = Color3.fromRGB(90, 200, 100)
+		local orange = Color3.fromRGB(240, 160, 60)
+		local red = Color3.fromRGB(220, 50, 50)
+		if ratio >= 0.55 then
+			local t = (1 - ratio) / 0.45
+			return green:Lerp(orange, math.clamp(t, 0, 1))
+		elseif ratio >= 0.2 then
+			local t = (0.55 - ratio) / 0.35
+			return orange:Lerp(red, math.clamp(t, 0, 1))
+		end
+		return red
+	end
+	local function apply(h, maxH, instant)
+		local col = colorFor(h, maxH)
+		if instant then
+			dot.BackgroundColor3 = col
+		else
+			tw(dot, { BackgroundColor3 = col }, 0.32)
+		end
+	end
+	local function bindHum(hum)
+		if not hum or not hum.Parent then
+			apply(0, 1, false)
+			return
+		end
+		local function upd()
+			if hum.Parent then
+				apply(hum.Health, hum.MaxHealth, false)
+			else
+				apply(0, 1, false)
+			end
+		end
+		upd()
+		push(hum.HealthChanged:Connect(upd))
+		push(hum:GetPropertyChangedSignal("MaxHealth"):Connect(upd))
+		push(hum.Died:Connect(function()
+			apply(0, 1, false)
+		end))
+	end
+	local function bindChar(char)
+		if not char then
+			apply(0, 1, false)
+			return
+		end
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if hum then
+			bindHum(hum)
+		else
+			apply(0, 1, false)
+			push(char.ChildAdded:Connect(function(ch)
+				if ch:IsA("Humanoid") and char == lp.Character then
+					bindHum(ch)
+				end
+			end))
+		end
+	end
+	if lp.Character then
+		bindChar(lp.Character)
+	else
+		apply(0, 1, false)
+	end
+	push(lp.CharacterAdded:Connect(bindChar))
+end
+
+local function startFollow(W)
+	if W.followConn then
+		pcall(function() W.followConn:Disconnect() end)
+	end
+	W.followConn = RunService.RenderStepped:Connect(function(dt)
+		if W.destroyed then
+			return
+		end
+		local ui = W.ui
+		if not ui.island then
+			return
+		end
+		if W.islandFollowing and W.islandTarget then
+			local a = math.clamp(dt * 14, 0, 1)
+			local cx = ui.island.Position.X.Offset
+			local cy = ui.island.Position.Y.Offset
+			local tx = W.islandTarget.X.Offset
+			local ty = W.islandTarget.Y.Offset
+			ui.island.Position = UDim2.new(ui.island.Position.X.Scale, cx + (tx - cx) * a, ui.island.Position.Y.Scale, cy + (ty - cy) * a)
+		end
+		if ui.islandLine and ui.island then
+			local a = math.clamp(dt * 9, 0, 1)
+			local ix = ui.island.Position.X.Offset
+			local iy = ui.island.Position.Y.Offset + 26
+			local lx = ui.islandLine.Position.X.Offset
+			local ly = ui.islandLine.Position.Y.Offset
+			ui.islandLine.Position = UDim2.new(ui.islandLine.Position.X.Scale, lx + (ix - lx) * a, ui.islandLine.Position.Y.Scale, ly + (iy - ly) * a)
+		end
+		if W.following and ui.shell then
+			local a = math.clamp(dt * 15, 0, 1)
+			local cur = ui.shell.Position
+			local tgt = UDim2.new(0.5, W.target.X, 0.5, W.target.Y)
+			ui.shell.Position = cur:Lerp(tgt, a)
+			W.off = W.target
+		end
+	end)
+end
+
+local defaultCfg = {
+	Title = "UI Library",
+	Subtitle = "v" .. UI.Version,
+	ThemeName = "Custom",
+	ThemePreset = "graphite",
+	WindowIcon = nil,
+	Icon = nil,
+	WindowIconSize = 26,
+	Transparent = true,
+	BackgroundTransparency = 0.02,
+	SidebarTransparency = 0.06,
+	CardTransparency = 0.04,
+	Blur = true,
+	BlurSize = 12,
+	Scale = 1,
+	ShowProfile = true,
+	ToggleKey = Enum.KeyCode.RightShift,
+	IslandPosition = UDim2.new(0.5, 0, 0, 60),
+}
+
+function UI:Create(opts)
+	opts = opts or {}
+	local W = setmetatable({}, Window)
+	W.cfg = {}
+	for k, v in pairs(defaultCfg) do
+		W.cfg[k] = v
+	end
+	for k, v in pairs(opts) do
+		W.cfg[k] = v
+	end
+	W.ui = {}
+	W.Flags = {}
+	W.pages = {}
+	W.groups = {}
+	W.ordered = {}
+	W.themeMarks = {}
+	W.binds = {}
+	W.conns = {}
+	W.token = 0
+	W.query = ""
+	W.current = nil
+	W.isOpen = false
+	W.destroyed = false
+	W.designW = 940
+	W.designH = 560
+	W.manualScale = nil
+	W.off = Vector2.new(0, 0)
+	W.target = Vector2.new(0, 0)
+	W.islandFollowing = false
+	W.islandFollow = true
+	W.islandTitle = W.cfg.Title
+	W.playerHidden = false
+	W.islandPos = W.cfg.IslandPosition
+	W.S = {
+		Search = "Search",
+		SearchResult = "Search Results",
+		None = "None",
+		Run = "Run",
+	}
+	if opts.SaveFolder then
+		loadStore(opts.SaveFolder)
+		saveOn = true
+	end
+	buildShell(W)
+	buildHandles(W)
+	buildSidebar(W)
+	buildContent(W)
+	buildIsland(W)
+	buildProfile(W)
+	buildConfirm(W)
+	setupHealth(W)
+	startFollow(W)
+	if W.cfg.Theme then
+		W:SetTheme(W.cfg.Theme, true)
+	end
+	Active = W
 	return W
 end
 
