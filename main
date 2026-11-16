@@ -18,6 +18,7 @@ Page.__index = Page
 local Active = nil
 local CARD_W = 336
 local HEAD_H = 96
+local ISLAND_MINI = 26
 
 local themeKeys = { "bg", "side", "card", "card2", "stroke", "accent", "accent2", "text", "sub", "icon", "selected", "off", "knobOff", "dim", "edge", "island" }
 local baseKeys = { "bg", "side", "card", "card2", "stroke", "accent", "accent2", "text", "sub", "off", "knobOff", "dim", "edge", "island" }
@@ -3922,7 +3923,12 @@ local function buildIsland(W)
 		for i = sepIdx + 1, 3 do
 			seps[i].Visible = false
 		end
-		put(island, { Size = UDim2.fromOffset(x + 10, 34) })
+		W.islandLayoutW = x + 10
+		if W.islandMini or W.islandAnimBusy then
+			W.islandNeedLayout = true
+		else
+			put(island, { Size = UDim2.fromOffset(x + 10, 34) })
+		end
 	end
 	ui.islandLayout(false)
 
@@ -3968,7 +3974,7 @@ local function buildIsland(W)
 				W.islandActive = true
 			end
 		end, function()
-			if not moved then
+			if not moved and not W.islandMini and not W.islandAnimBusy then
 				W:Toggle()
 			end
 		end)
@@ -3978,7 +3984,7 @@ local function buildIsland(W)
 		Name = "IslandHandle",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0, -20),
-		Size = UDim2.fromOffset(100, 22),
+		Size = UDim2.fromOffset(132, 22),
 		BackgroundTransparency = 1,
 		Active = true,
 		ZIndex = 55,
@@ -3986,20 +3992,28 @@ local function buildIsland(W)
 	local line = new("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.fromScale(0.5, 0.5),
-		Size = UDim2.fromOffset(48, 3),
+		Size = UDim2.fromOffset(96, 3),
 		BackgroundColor3 = T.dim,
 		BackgroundTransparency = 0.45,
 		BorderSizePixel = 0,
 		ZIndex = 56,
 	}, lineHit)
 	round(line, 2)
+	new("UIGradient", {
+		Rotation = 0,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(205, 205, 205)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(205, 205, 205)),
+		}),
+	}, line)
 	ui.islandLine = lineHit
 
 	local function lineRest()
-		tw(line, { Size = UDim2.fromOffset(48, 3), BackgroundColor3 = T.dim, BackgroundTransparency = 0.45 }, 0.25)
+		tw(line, { Size = UDim2.fromOffset(96, 3), BackgroundColor3 = T.dim, BackgroundTransparency = 0.45 }, 0.25)
 	end
 	local function lineActive()
-		tw(line, { Size = UDim2.fromOffset(60, 3), BackgroundColor3 = T.accent2, BackgroundTransparency = 0.1 }, 0.16)
+		tw(line, { Size = UDim2.fromOffset(120, 3), BackgroundColor3 = T.accent2, BackgroundTransparency = 0.1 }, 0.16)
 	end
 	lineHit.MouseEnter:Connect(lineActive)
 	lineHit.MouseLeave:Connect(function()
@@ -4031,11 +4045,158 @@ local function buildIsland(W)
 		end)
 	end)
 
+	local dotHit = new("TextButton", {
+		Position = UDim2.fromOffset(8, 7),
+		Size = UDim2.fromOffset(20, 20),
+		BackgroundTransparency = 1,
+		Text = "",
+		AutoButtonColor = false,
+		ZIndex = 61,
+	}, island)
+	local fadeSnap = setmetatable({}, { __mode = "k" })
+	local function snapOne(o)
+		if o:IsA("TextLabel") then
+			fadeSnap[o] = { TextTransparency = o.TextTransparency }
+		elseif o:IsA("ImageLabel") then
+			fadeSnap[o] = { ImageTransparency = o.ImageTransparency, BackgroundTransparency = o.BackgroundTransparency }
+			local g = o:FindFirstChild("G")
+			if g and g:IsA("TextLabel") then
+				fadeSnap[g] = { TextTransparency = g.TextTransparency }
+			end
+		end
+	end
+	local function snapFade()
+		for _, ch in ipairs(island:GetChildren()) do
+			if ch ~= ui.islandDot then
+				snapOne(ch)
+				for _, gc in ipairs(ch:GetChildren()) do
+					snapOne(gc)
+				end
+			end
+		end
+	end
+	local function fadeOne(o, alpha, dur)
+		local r = fadeSnap[o]
+		if o:IsA("TextLabel") then
+			tw(o, { TextTransparency = alpha == 1 and 1 or (r and r.TextTransparency or 0) }, dur)
+		elseif o:IsA("ImageLabel") then
+			tw(o, {
+				ImageTransparency = alpha == 1 and 1 or (r and r.ImageTransparency or 0),
+				BackgroundTransparency = alpha == 1 and 1 or (r and r.BackgroundTransparency or 1),
+			}, dur)
+			local g = o:FindFirstChild("G")
+			if g and g:IsA("TextLabel") then
+				local rg = fadeSnap[g]
+				tw(g, { TextTransparency = alpha == 1 and 1 or (rg and rg.TextTransparency or 0) }, dur)
+			end
+		end
+	end
+	local function islandFade(alpha, dur)
+		for _, ch in ipairs(island:GetChildren()) do
+			if ch ~= ui.islandDot then
+				fadeOne(ch, alpha, dur)
+				for _, gc in ipairs(ch:GetChildren()) do
+					fadeOne(gc, alpha, dur)
+				end
+			end
+		end
+		if alpha == 0 then
+			local ip = ui.islandPlayer
+			if ip then
+				local lt = W.playerHidden and 1 or 0
+				local et = W.playerHidden and 0 or 1
+				tw(ip.label, { TextTransparency = lt }, dur)
+				tw(ip.eye, { ImageTransparency = et }, dur)
+				local g = ip.eye:FindFirstChild("G")
+				if g then
+					tw(g, { TextTransparency = et }, dur)
+				end
+			end
+		end
+	end
+	local function collapseIsland()
+		if W.islandMini or W.islandAnimBusy then
+			return
+		end
+		W.islandAnimBusy = true
+		local w = island.Size.X.Offset
+		W.islandLayoutW = w
+		snapFade()
+		islandFade(1, 0.3)
+		tw(line, { BackgroundTransparency = 1 }, 0.2)
+		island.ClipsDescendants = true
+		dotHit.Position = UDim2.fromOffset(0, 0)
+		dotHit.Size = UDim2.fromScale(1, 1)
+		tw(ui.islandDot, { Rotation = -180, Position = UDim2.fromOffset(9, 9) }, 0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+		tw(island, {
+			Size = UDim2.fromOffset(ISLAND_MINI, ISLAND_MINI),
+			Position = UDim2.new(0.5, W.iOff.X + 18 - w / 2, 0, 10 + W.iOff.Y + 4),
+		}, 0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+		task.delay(0.45, function()
+			if W.destroyed then
+				return
+			end
+			W.islandMini = true
+			W.islandAnimBusy = false
+			lineHit.Visible = false
+			islandFade(1, 0)
+		end)
+	end
+	local function expandIsland()
+		if not W.islandMini or W.islandAnimBusy then
+			return
+		end
+		W.islandAnimBusy = true
+		lineHit.Visible = true
+		lineRest()
+		dotHit.Position = UDim2.fromOffset(8, 7)
+		dotHit.Size = UDim2.fromOffset(20, 20)
+		tw(ui.islandDot, { Rotation = 0, Position = UDim2.fromOffset(14, 13) }, 0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+		tw(island, { Size = UDim2.fromOffset(W.islandLayoutW, 34) }, 0.45, Enum.EasingStyle.Back)
+		tw(island, { Position = UDim2.new(0.5, W.iOff.X, 0, 10 + W.iOff.Y) }, 0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+		task.delay(0.08, function()
+			if not W.destroyed then
+				islandFade(0, 0.35)
+			end
+		end)
+		task.delay(0.45, function()
+			if W.destroyed then
+				return
+			end
+			island.ClipsDescendants = false
+			W.islandMini = false
+			W.islandAnimBusy = false
+			if W.islandNeedLayout then
+				W.islandNeedLayout = false
+				ui.islandLayout(false)
+			end
+		end)
+	end
+	dotHit.Activated:Connect(function()
+		if W.islandAnimBusy then
+			return
+		end
+		if W.islandMini then
+			expandIsland()
+		else
+			collapseIsland()
+		end
+	end)
+	dotHit.MouseEnter:Connect(function()
+		tw(ui.islandScale, { Scale = 1.04 }, 0.2)
+	end)
+	dotHit.MouseLeave:Connect(function()
+		tw(ui.islandScale, { Scale = 1 }, 0.25)
+	end)
+
 	ui.islandApply = function()
 		island.Position = UDim2.new(0.5, W.iOff.X, 0, 10 + W.iOff.Y)
 		lineHit.Position = UDim2.new(0.5, W.lineOff.X, 0, 51 + W.lineOff.Y + W.linePullCur)
 	end
 	ui.islandStep = function(dt)
+		if W.islandMini or W.islandAnimBusy then
+			return
+		end
 		local d1 = W.iTarget - W.iOff
 		W.iOff = W.iOff + d1 * (1 - math.exp(-dt * 16))
 		local d2 = W.iOff - W.lineOff
@@ -4153,6 +4314,10 @@ function UI:CreateWindow(cfg)
 		linePull = 0,
 		linePullCur = 0,
 		islandActive = false,
+		islandMini = false,
+		islandAnimBusy = false,
+		islandNeedLayout = false,
+		islandLayoutW = 0,
 		islandFollow = cfg.IslandTitle == nil,
 		islandTitle = cfg.IslandTitle or c.Title,
 	}, Window)
