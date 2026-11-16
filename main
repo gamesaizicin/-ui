@@ -692,6 +692,13 @@ local function buildSwitch(parent, w, h)
 	}, parent)
 	round(track, h / 2)
 	local st = stroke(track, T.white, 0.88)
+	new("UIGradient", {
+		Rotation = 90,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(222, 222, 222)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 255, 255)),
+		}),
+	}, track)
 	local pad = 3
 	local k = h - pad * 2
 	local knob = new("Frame", {
@@ -834,7 +841,15 @@ local function newGroup(W, page, opts)
 	}, slot)
 	round(card, 14)
 	g.card = card
-	local cs = stroke(card, T.edge, hidden and 1 or 0.9, 1)
+	local cs = stroke(card, T.edge, hidden and 1 or 0.82, 1)
+	new("UIGradient", {
+		Rotation = 90,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(246, 246, 246)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(214, 214, 214)),
+		}),
+	}, card)
 
 	local glow = new("Frame", {
 		Size = UDim2.fromScale(1, 1),
@@ -1024,10 +1039,10 @@ local function newGroup(W, page, opts)
 			layoutBody(true)
 		end)
 		hit.MouseEnter:Connect(function()
-			tw(cs, { Transparency = g.enabled and 0.45 or 0.7 }, 0.2)
+			tw(cs, { Transparency = g.enabled and 0.38 or 0.6 }, 0.2)
 		end)
 		hit.MouseLeave:Connect(function()
-			tw(cs, { Transparency = g.enabled and 0.55 or 0.86 }, 0.2)
+			tw(cs, { Transparency = g.enabled and 0.5 or 0.8 }, 0.2)
 		end)
 	end
 
@@ -1035,7 +1050,7 @@ local function newGroup(W, page, opts)
 		g.enabled = v
 		setSwitch(v)
 		tw(glow, { BackgroundTransparency = v and 0.9 or 1 }, 0.4)
-		tw(cs, { Color = v and T.accent2 or T.edge, Transparency = v and 0.55 or 0.86 }, 0.3)
+		tw(cs, { Color = v and T.accent2 or T.edge, Transparency = v and 0.5 or 0.8 }, 0.3)
 		setFlag(opts.Flag, v)
 		if hasToggle then
 			ms.enabled = v
@@ -1261,6 +1276,13 @@ local function newGroup(W, page, opts)
 		}, row)
 		round(head, 8)
 		stroke(head, T.white, 0.9)
+		new("UIGradient", {
+			Rotation = 90,
+			Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(208, 208, 208)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(242, 242, 242)),
+			}),
+		}, head)
 		label(head, {
 			Position = UDim2.fromOffset(12, 0),
 			Size = UDim2.fromOffset(120, 44),
@@ -1488,6 +1510,13 @@ local function newGroup(W, page, opts)
 		}, row)
 		round(head, 8)
 		stroke(head, T.white, 0.92)
+		new("UIGradient", {
+			Rotation = 90,
+			Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(208, 208, 208)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(242, 242, 242)),
+			}),
+		}, head)
 		label(head, {
 			Position = UDim2.fromOffset(12, 0),
 			Size = UDim2.fromOffset(100, 44),
@@ -1915,6 +1944,13 @@ local function newGroup(W, page, opts)
 		}, row)
 		round(btn, 8)
 		stroke(btn, T.white, 0.9)
+		new("UIGradient", {
+			Rotation = 90,
+			Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(208, 208, 208)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(242, 242, 242)),
+			}),
+		}, btn)
 		local function setKey(code, fire)
 			entry.key = code
 			btn.Text = code and code.Name or W.S.None
@@ -2009,6 +2045,13 @@ local function newGroup(W, page, opts)
 		}, row)
 		round(b, 8)
 		local bs = stroke(b, T.white, 0.88)
+		new("UIGradient", {
+			Rotation = 90,
+			Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(210, 210, 210)),
+			}),
+		}, b)
 		local held = 0
 		local holdUntil = 0
 		local gen = 0
@@ -2097,6 +2140,13 @@ local function newGroup(W, page, opts)
 		}, row)
 		round(field, 8)
 		local fs = stroke(field, T.white, 0.92)
+		new("UIGradient", {
+			Rotation = 90,
+			Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(208, 208, 208)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(242, 242, 242)),
+			}),
+		}, field)
 		local key = ctlKey(o.Flag or o.Name or "TextBox")
 		local value = o.Default or ""
 		local saved = loadCtl(key)
@@ -2367,6 +2417,13 @@ local function newGroup(W, page, opts)
 			}, row)
 			round(b, 8)
 			local st = stroke(b, T.white, 0.9)
+			new("UIGradient", {
+				Rotation = 90,
+				Color = ColorSequence.new({
+					ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+					ColorSequenceKeypoint.new(1, Color3.fromRGB(216, 216, 216)),
+				}),
+			}, b)
 			local dotColors = { th.p.bg, th.p.card, th.p.accent }
 			for d, col in ipairs(dotColors) do
 				local dot = new("Frame", {
@@ -2462,6 +2519,13 @@ function Page:AddMainButton(opts)
 	round(card, 12)
 	g.card = card
 	local cs = stroke(card, T.accent2, 0.55, 1)
+	new("UIGradient", {
+		Rotation = 90,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(232, 232, 232)),
+		}),
+	}, card)
 	local press = new("UIScale", { Scale = 1 }, card)
 	local sheen = new("Frame", {
 		Size = UDim2.fromScale(1, 1),
@@ -2741,7 +2805,8 @@ local function styleNav(btn, selected)
 	tw(btn.name, { TextColor3 = selected and T.white or T.dim }, 0.25)
 	tw(btn.count, { TextColor3 = selected and T.white or T.sub }, 0.25)
 	btn.name.Font = selected and Enum.Font.GothamBold or Enum.Font.GothamMedium
-	tw(btn.button, { BackgroundTransparency = 1 }, 0.2)
+	tw(btn.button, { BackgroundColor3 = selected and T.selected or T.card, BackgroundTransparency = selected and 0.08 or 0.45 }, 0.25)
+	tw(btn.edge, { Color = selected and T.accent2 or T.edge, Transparency = selected and 0.45 or 0.72 }, 0.25)
 end
 
 function Window:_refresh(mode)
@@ -2785,7 +2850,7 @@ function Window:_refresh(mode)
 		if page == self.current then
 			tw(ui.indicator, {
 				Position = UDim2.fromOffset(0, (page.index - 1) * 42),
-				BackgroundTransparency = active and 0.12 or 1,
+				BackgroundTransparency = 1,
 			}, 0.4)
 		end
 	end
@@ -2811,13 +2876,22 @@ function Window:AddPage(opts)
 	local b = new("TextButton", {
 		Position = UDim2.fromOffset(0, (page.index - 1) * 42),
 		Size = UDim2.fromOffset(178, 40),
-		BackgroundColor3 = T.white,
-		BackgroundTransparency = 1,
+		BackgroundColor3 = T.card,
+		BackgroundTransparency = 0.45,
 		AutoButtonColor = false,
 		Text = "",
 		BorderSizePixel = 0,
 	}, ui.navHolder)
-	round(b, 6)
+	round(b, 10)
+	local bEdge = stroke(b, T.edge, 0.72, 1)
+	new("UIGradient", {
+		Rotation = 90,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(244, 244, 244)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(222, 222, 222)),
+		}),
+	}, b)
 	local icon = makeIcon(b, page.icon, 22, T.icon, {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 14, 0.5, 0),
@@ -2839,17 +2913,19 @@ function Window:AddPage(opts)
 		TextColor3 = T.sub,
 		TextXAlignment = Enum.TextXAlignment.Right,
 	})
-	page.btn = { button = b, icon = icon, name = nameL, count = countL }
+	page.btn = { button = b, icon = icon, name = nameL, count = countL, edge = bEdge }
 	b.MouseEnter:Connect(function()
 		if not (self.query == "" and self.current == page) then
 			tint(icon, T.text)
-			tw(b, { BackgroundTransparency = 0.93 }, 0.18)
+			tw(b, { BackgroundTransparency = 0.26 }, 0.18)
+			tw(bEdge, { Transparency = 0.55 }, 0.18)
 		end
 	end)
 	b.MouseLeave:Connect(function()
 		if not (self.query == "" and self.current == page) then
 			tint(icon, T.icon)
-			tw(b, { BackgroundTransparency = 1 }, 0.18)
+			tw(b, { BackgroundTransparency = 0.45 }, 0.18)
+			tw(bEdge, { Transparency = 0.72 }, 0.18)
 		end
 	end)
 	b.MouseButton1Click:Connect(function()
@@ -3162,6 +3238,14 @@ local function buildShell(W)
 	}, ui.shell)
 	round(ui.main, 20)
 	stroke(ui.main, T.edge, 0.84, 1)
+	new("UIGradient", {
+		Rotation = 90,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+			ColorSequenceKeypoint.new(0.6, Color3.fromRGB(246, 246, 246)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(222, 222, 222)),
+		}),
+	}, ui.main)
 	ui.scale = new("UIScale", { Scale = 1 }, ui.main)
 	W.baseScale = W:_computeScale()
 	local sheen = new("Frame", {
@@ -3270,6 +3354,14 @@ local function buildSidebar(W)
 		BorderSizePixel = 0,
 	}, ui.main)
 	round(sidebar, 16)
+	stroke(sidebar, T.edge, 0.85, 1)
+	new("UIGradient", {
+		Rotation = 90,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(226, 226, 226)),
+		}),
+	}, sidebar)
 	local sidebarSheen = new("Frame", {
 		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = T.white,
@@ -3331,7 +3423,14 @@ local function buildSidebar(W)
 		BorderSizePixel = 0,
 	}, sidebar)
 	round(searchBox, 20)
-	local searchStroke = stroke(searchBox, T.white, 1)
+	local searchStroke = stroke(searchBox, T.edge, 0.86)
+	new("UIGradient", {
+		Rotation = 90,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(206, 206, 206)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(240, 240, 240)),
+		}),
+	}, searchBox)
 	local searchIcon = makeIcon(searchBox, "search", 18, T.icon, {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 14, 0.5, 0),
@@ -3354,7 +3453,7 @@ local function buildSidebar(W)
 		tint(searchIcon, T.accent2)
 	end)
 	ui.searchInput.FocusLost:Connect(function()
-		tw(searchStroke, { Color = T.white, Transparency = 1 })
+		tw(searchStroke, { Color = T.edge, Transparency = 0.86 })
 		tint(searchIcon, T.icon)
 	end)
 	ui.searchInput:GetPropertyChangedSignal("Text"):Connect(function()
@@ -3404,6 +3503,13 @@ local function buildSidebar(W)
 		ui.profilePlate = plate
 		round(plate, 12)
 		stroke(plate, T.white, 0.94)
+		new("UIGradient", {
+			Rotation = 90,
+			Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(228, 228, 228)),
+			}),
+		}, plate)
 		local avatar = new("ImageLabel", {
 			Position = UDim2.fromOffset(10, 10),
 			Size = UDim2.fromOffset(40, 40),
@@ -3651,6 +3757,13 @@ local function buildConfirm(W)
 		ZIndex = 123,
 	}, panel)
 	round(yes, 10)
+	new("UIGradient", {
+		Rotation = 90,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(235, 235, 235)),
+		}),
+	}, yes)
 	local no = new("TextButton", {
 		Position = UDim2.fromOffset(170, 98),
 		Size = UDim2.fromOffset(126, 38),
@@ -3666,6 +3779,13 @@ local function buildConfirm(W)
 	}, panel)
 	round(no, 10)
 	stroke(no, T.white, 0.88)
+	new("UIGradient", {
+		Rotation = 90,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(222, 222, 222)),
+		}),
+	}, no)
 	W:Connect(yes.MouseEnter, function()
 		tw(yes, { BackgroundColor3 = T.accent2 }, 0.16)
 	end)
@@ -3786,12 +3906,30 @@ local function bindHealth(W)
 	attach(lp.Character)
 end
 
-local function clampIsland(W, v)
-	local ui = W.ui
-	local g = ui.gui.AbsoluteSize
-	local w = ui.island.AbsoluteSize.X
-	local maxX = math.max(0, g.X / 2 - w / 2 - 6)
-	return Vector2.new(math.clamp(v.X, -maxX, maxX), math.clamp(v.Y, -6, math.max(0, g.Y - 120)))
+local function clampIsland(W, v, mini)
+	if mini == nil then
+		mini = W.islandMini == true
+	end
+	local g = W.ui.gui.AbsoluteSize
+	if g.X < 1 or g.Y < 1 then
+		return v
+	end
+	local w, h, dx, top
+	if mini then
+		w = ISLAND_MINI
+		h = ISLAND_MINI
+		dx = W.islandMiniDX
+		top = 14
+	else
+		w = math.max(W.islandLayoutW, 34)
+		h = 52
+		dx = 0
+		top = 10
+	end
+	local pad = 6
+	local rx = math.max(0, g.X / 2 - w / 2 - pad)
+	local ry = math.max(0, g.Y - pad * 2 - h)
+	return Vector2.new(math.clamp(v.X, -rx - dx, rx - dx), math.clamp(v.Y, pad - top, pad - top + ry))
 end
 
 local function buildIsland(W)
@@ -3808,7 +3946,15 @@ local function buildIsland(W)
 		ZIndex = 50,
 	}, ui.gui)
 	round(island, 17)
-	stroke(island, T.edge, 0.82, 1)
+	stroke(island, T.edge, 0.78, 1)
+	new("UIGradient", {
+		Rotation = 90,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+			ColorSequenceKeypoint.new(0.45, Color3.fromRGB(238, 238, 238)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(190, 190, 190)),
+		}),
+	}, island)
 	ui.island = island
 	ui.islandScale = new("UIScale", { Scale = 1 }, island)
 	ui.islandDot = new("Frame", {
@@ -4122,6 +4268,8 @@ local function buildIsland(W)
 		local w = island.Size.X.Offset
 		W.islandLayoutW = w
 		W.islandMiniDX = 18 - w / 2
+		W.iOff = clampIsland(W, W.iOff, true)
+		W.iTarget = W.iOff
 		snapFade()
 		islandFade(1, 0.3)
 		tw(line, { BackgroundTransparency = 1 }, 0.2)
@@ -4141,6 +4289,8 @@ local function buildIsland(W)
 			W.islandAnimBusy = false
 			lineHit.Visible = false
 			islandFade(1, 0)
+			W.iTarget = clampIsland(W, W.iTarget)
+			W.islandActive = true
 		end)
 	end
 	local function expandIsland()
@@ -4148,6 +4298,8 @@ local function buildIsland(W)
 			return
 		end
 		W.islandAnimBusy = true
+		W.iOff = clampIsland(W, W.iOff, false)
+		W.iTarget = W.iOff
 		lineHit.Visible = true
 		lineRest()
 		dotHit.Position = UDim2.fromOffset(8, 7)
@@ -4171,6 +4323,8 @@ local function buildIsland(W)
 				W.islandNeedLayout = false
 				ui.islandLayout(false)
 			end
+			W.iTarget = clampIsland(W, W.iTarget)
+			W.islandActive = true
 		end)
 	end
 	dotHit.InputBegan:Connect(function(i)
@@ -4430,6 +4584,10 @@ function UI:CreateWindow(cfg)
 	end)
 
 	W:Connect(W.ui.gui:GetPropertyChangedSignal("AbsoluteSize"), function()
+		if W.ui.island and W.ui.islandStep then
+			W.iTarget = clampIsland(W, W.iTarget)
+			W.islandActive = true
+		end
 		if W.resizing then
 			return
 		end
