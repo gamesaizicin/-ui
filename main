@@ -3786,12 +3786,45 @@ local function bindHealth(W)
 	attach(lp.Character)
 end
 
-local function clampIsland(W, v)
+local function islandBounds(W, mini)
 	local ui = W.ui
 	local g = ui.gui.AbsoluteSize
-	local w = ui.island.AbsoluteSize.X
-	local maxX = math.max(0, g.X / 2 - w / 2 - 6)
-	return Vector2.new(math.clamp(v.X, -maxX, maxX), math.clamp(v.Y, -6, math.max(0, g.Y - 120)))
+	if g.X < 1 or g.Y < 1 then
+		return nil
+	end
+	local ratio = g.X / g.Y
+	local pad = math.clamp(math.min(g.X, g.Y) * (ratio < 1 and 0.025 or 0.015), 4, 12)
+	local w, h, dx, top
+	if mini then
+		w = ISLAND_MINI
+		h = ISLAND_MINI
+		dx = W.islandMiniDX
+		top = 14
+	else
+		w = W.islandLayoutW
+		if w <= 0 then
+			w = ui.island.AbsoluteSize.X
+		end
+		h = 34
+		dx = 0
+		top = 10
+	end
+	local hx = math.max(0, g.X / 2 - w / 2 - pad)
+	local cy = -dx
+	local minY = pad - top
+	local maxY = math.max(minY, g.Y - top - h - pad)
+	return cy - hx, cy + hx, minY, maxY
+end
+
+local function clampIsland(W, v, mini)
+	if mini == nil then
+		mini = W.islandMini
+	end
+	local x0, x1, y0, y1 = islandBounds(W, mini)
+	if not x0 then
+		return Vector2.new(v.X, v.Y)
+	end
+	return Vector2.new(math.clamp(v.X, x0, x1), math.clamp(v.Y, y0, y1))
 end
 
 local function buildIsland(W)
@@ -4122,6 +4155,8 @@ local function buildIsland(W)
 		local w = island.Size.X.Offset
 		W.islandLayoutW = w
 		W.islandMiniDX = 18 - w / 2
+		W.iTarget = clampIsland(W, W.iTarget, true)
+		W.iOff = clampIsland(W, W.iOff, true)
 		snapFade()
 		islandFade(1, 0.3)
 		tw(line, { BackgroundTransparency = 1 }, 0.2)
@@ -4139,6 +4174,8 @@ local function buildIsland(W)
 			end
 			W.islandMini = true
 			W.islandAnimBusy = false
+			W.iTarget = clampIsland(W, W.iTarget)
+			W.islandActive = true
 			lineHit.Visible = false
 			islandFade(1, 0)
 		end)
@@ -4148,6 +4185,8 @@ local function buildIsland(W)
 			return
 		end
 		W.islandAnimBusy = true
+		W.iTarget = clampIsland(W, W.iTarget, false)
+		W.iOff = clampIsland(W, W.iOff, false)
 		lineHit.Visible = true
 		lineRest()
 		dotHit.Position = UDim2.fromOffset(8, 7)
@@ -4167,6 +4206,8 @@ local function buildIsland(W)
 			island.ClipsDescendants = false
 			W.islandMini = false
 			W.islandAnimBusy = false
+			W.iTarget = clampIsland(W, W.iTarget)
+			W.islandActive = true
 			if W.islandNeedLayout then
 				W.islandNeedLayout = false
 				ui.islandLayout(false)
@@ -4441,6 +4482,15 @@ function UI:CreateWindow(cfg)
 		W:_layoutHandles(sc)
 		if W.isOpen then
 			tw(W.ui.scale, { Scale = sc }, 0.25)
+		end
+	end)
+
+	W:Connect(W.ui.gui:GetPropertyChangedSignal("AbsoluteSize"), function()
+		if W.ui.island and W.ui.islandApply then
+			W.iTarget = clampIsland(W, W.iTarget)
+			if not W.islandAnimBusy and (W.iTarget - W.iOff).Magnitude > 0.15 then
+				W.islandActive = true
+			end
 		end
 	end)
 
